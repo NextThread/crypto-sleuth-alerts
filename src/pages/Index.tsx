@@ -5,6 +5,7 @@ import CryptoSearch from '../components/CryptoSearch';
 import CryptoChart from '../components/CryptoChart';
 import PriceMetrics from '../components/PriceMetrics';
 import TechnicalAnalysis from '../components/TechnicalAnalysis';
+import ChartControls, { ChartControlsState } from '../components/ChartControls';
 import { TimeInterval } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,13 @@ const DEFAULT_SYMBOL = 'BTCUSDT';
 const Index = () => {
   const [symbol, setSymbol] = useState<string>(DEFAULT_SYMBOL);
   const [interval, setInterval] = useState<TimeInterval>('15m');
+  const [chartControls, setChartControls] = useState<ChartControlsState>({
+    showSupportResistance: true,
+    showEntryExitPoints: true, 
+    showPatterns: true,
+    showFibonacciLevels: true,
+    showTrendLines: true
+  });
   const { toast } = useToast();
   
   useEffect(() => {
@@ -57,6 +65,10 @@ const Index = () => {
     setInterval(newInterval);
   };
   
+  const handleChartControlsChange = (newControls: ChartControlsState) => {
+    setChartControls(newControls);
+  };
+  
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -96,9 +108,10 @@ const Index = () => {
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2 animate-fade-in">
-            <CryptoChart symbol={symbol} interval={interval} />
+            <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
           </div>
-          <div className="animate-fade-in animation-delay-300">
+          <div className="animate-fade-in animation-delay-300 space-y-6">
+            <ChartControls onControlsChange={handleChartControlsChange} />
             <TechnicalAnalysis symbol={symbol} interval={interval} />
           </div>
         </div>
