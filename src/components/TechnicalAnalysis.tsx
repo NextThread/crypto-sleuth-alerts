@@ -1,9 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
-import { calculateRSI, calculateMACD, calculateTrendDirection } from '../utils/technicalIndicators';
+import { 
+  calculateRSI, 
+  calculateMACD, 
+  calculateTrendDirection,
+  detectPatterns
+} from '../utils/technicalIndicators';
 import { formatPrice } from '../utils/chartUtils';
-import { TrendingUp, TrendingDown, Minus, Target, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Target, AlertTriangle, Activity, BarChart2 } from 'lucide-react';
 
 interface TechnicalAnalysisProps {
   symbol: string;
@@ -20,6 +25,12 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   const [macd, setMacd] = useState<{ value: number; signal: number } | null>(null);
   const [trend, setTrend] = useState<'bullish' | 'bearish' | 'neutral'>('neutral');
   const [riskReward, setRiskReward] = useState<number | null>(null);
+  const [patternCount, setPatternCount] = useState<{
+    headAndShoulders: number;
+    doubleTop: number;
+    doubleBottom: number;
+    triangle: number;
+  }>({ headAndShoulders: 0, doubleTop: 0, doubleBottom: 0, triangle: 0 });
   
   useEffect(() => {
     const fetchData = async () => {
@@ -57,6 +68,15 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
           const reward = nearestResistance - currentPrice;
           setRiskReward(reward / risk);
         }
+        
+        // Get patterns
+        const patterns = detectPatterns(klineData);
+        setPatternCount({
+          headAndShoulders: patterns.headAndShoulders.length,
+          doubleTop: patterns.doubleTop.length,
+          doubleBottom: patterns.doubleBottom.length,
+          triangle: patterns.triangle.length
+        });
       } catch (err) {
         console.error('Error fetching technical analysis data:', err);
         setError('Failed to load analysis. Please try again.');
@@ -75,16 +95,16 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   
   // Helper function to get RSI class
   const getRsiClass = () => {
-    if (rsi === null) return 'value-neutral';
-    if (rsi >= 70) return 'value-down'; // Overbought
-    if (rsi <= 30) return 'value-up'; // Oversold
-    return 'value-neutral';
+    if (rsi === null) return 'text-muted-foreground';
+    if (rsi >= 70) return 'text-crypto-bearish'; // Overbought
+    if (rsi <= 30) return 'text-crypto-bullish'; // Oversold
+    return 'text-muted-foreground';
   };
   
   // Helper function to get MACD class
   const getMacdClass = () => {
-    if (!macd) return 'value-neutral';
-    return macd.value > macd.signal ? 'value-up' : 'value-down';
+    if (!macd) return 'text-muted-foreground';
+    return macd.value > macd.signal ? 'text-crypto-bullish' : 'text-crypto-bearish';
   };
   
   // Helper function to get trend icon
@@ -99,9 +119,40 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
     }
   };
   
+  // Get pattern evaluation
+  const getPatternEvaluation = () => {
+    const { headAndShoulders, doubleTop, doubleBottom, triangle } = patternCount;
+    
+    // Count bearish vs bullish patterns
+    const bearishPatterns = headAndShoulders + doubleTop;
+    const bullishPatterns = doubleBottom;
+    
+    if (bearishPatterns > bullishPatterns) {
+      return {
+        evaluation: 'bearish',
+        description: `${bearishPatterns} bearish pattern${bearishPatterns !== 1 ? 's' : ''} detected`
+      };
+    } else if (bullishPatterns > bearishPatterns) {
+      return {
+        evaluation: 'bullish',
+        description: `${bullishPatterns} bullish pattern${bullishPatterns !== 1 ? 's' : ''} detected`
+      };
+    } else if (triangle > 0) {
+      return {
+        evaluation: 'neutral',
+        description: `${triangle} triangle pattern${triangle !== 1 ? 's' : ''} detected`
+      };
+    } else {
+      return {
+        evaluation: 'neutral',
+        description: 'No significant patterns detected'
+      };
+    }
+  };
+  
   if (isLoading && data.length === 0) {
     return (
-      <div className="glass-card rounded-lg p-4 animate-pulse h-[300px] flex items-center justify-center">
+      <div className="glass-card rounded-lg p-4 animate-pulse h-[400px] flex items-center justify-center">
         <p className="text-muted-foreground">Loading analysis...</p>
       </div>
     );
@@ -109,7 +160,7 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   
   if (error) {
     return (
-      <div className="glass-card rounded-lg p-4 h-[300px] flex flex-col items-center justify-center">
+      <div className="glass-card rounded-lg p-4 h-[400px] flex flex-col items-center justify-center">
         <AlertTriangle className="w-8 h-8 text-destructive mb-2" />
         <p className="text-destructive">{error}</p>
       </div>
@@ -118,13 +169,14 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   
   if (data.length === 0) {
     return (
-      <div className="glass-card rounded-lg p-4 h-[300px] flex items-center justify-center">
+      <div className="glass-card rounded-lg p-4 h-[400px] flex items-center justify-center">
         <p className="text-muted-foreground">No data available</p>
       </div>
     );
   }
   
   const currentPrice = data[data.length - 1].close;
+  const patternEval = getPatternEvaluation();
   
   return (
     <div className="glass-card rounded-lg p-6 h-full flex flex-col">
@@ -132,11 +184,31 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
       
       {/* Overall Trend */}
       <div className="flex items-center justify-between mb-6">
-        <span className="text-muted-foreground">Trend</span>
+        <span className="text-muted-foreground flex items-center gap-2">
+          <Activity className="w-4 h-4" />
+          Trend
+        </span>
         <div className="flex items-center space-x-2">
           {getTrendIcon()}
           <span className={`font-medium capitalize ${trend === 'bullish' ? 'text-crypto-bullish' : trend === 'bearish' ? 'text-crypto-bearish' : 'text-crypto-neutral'}`}>
             {trend}
+          </span>
+        </div>
+      </div>
+      
+      {/* Pattern Detection */}
+      <div className="flex items-center justify-between mb-6">
+        <span className="text-muted-foreground flex items-center gap-2">
+          <BarChart2 className="w-4 h-4" />
+          Patterns
+        </span>
+        <div className="flex items-center space-x-2">
+          <span className={`font-medium ${
+            patternEval.evaluation === 'bullish' ? 'text-crypto-bullish' : 
+            patternEval.evaluation === 'bearish' ? 'text-crypto-bearish' : 
+            'text-crypto-neutral'
+          }`}>
+            {patternEval.description}
           </span>
         </div>
       </div>
@@ -179,6 +251,40 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
           </div>
         </div>
       </div>
+      
+      {/* Pattern Summary */}
+      {(patternCount.headAndShoulders > 0 || patternCount.doubleTop > 0 || 
+        patternCount.doubleBottom > 0 || patternCount.triangle > 0) && (
+        <div className="mb-6 p-3 bg-secondary/30 rounded-md">
+          <h4 className="text-sm font-medium mb-2">Patterns Detected:</h4>
+          <ul className="text-xs space-y-1.5">
+            {patternCount.headAndShoulders > 0 && (
+              <li className="flex justify-between">
+                <span className="text-muted-foreground">Head & Shoulders:</span>
+                <span className="text-crypto-bearish">{patternCount.headAndShoulders} (Bearish)</span>
+              </li>
+            )}
+            {patternCount.doubleTop > 0 && (
+              <li className="flex justify-between">
+                <span className="text-muted-foreground">Double Top:</span>
+                <span className="text-crypto-bearish">{patternCount.doubleTop} (Bearish)</span>
+              </li>
+            )}
+            {patternCount.doubleBottom > 0 && (
+              <li className="flex justify-between">
+                <span className="text-muted-foreground">Double Bottom:</span>
+                <span className="text-crypto-bullish">{patternCount.doubleBottom} (Bullish)</span>
+              </li>
+            )}
+            {patternCount.triangle > 0 && (
+              <li className="flex justify-between">
+                <span className="text-muted-foreground">Triangle:</span>
+                <span className="text-crypto-neutral">{patternCount.triangle} (Neutral)</span>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
       
       {/* Price Target */}
       <div className="mt-auto pt-6 border-t border-border">

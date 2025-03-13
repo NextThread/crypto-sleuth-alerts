@@ -1,4 +1,3 @@
-
 import { KlineData } from '../services/binanceService';
 
 // Calculate Support and Resistance Levels
@@ -277,3 +276,240 @@ const calculateATR = (data: KlineData[], period: number): number => {
   
   return atr;
 };
+
+// Fibonacci Retracement Levels
+export const calculateFibonacciLevels = (data: KlineData[], lookbackPeriod: number = 100): number[] => {
+  if (data.length < lookbackPeriod) return [];
+  
+  const recentData = data.slice(-lookbackPeriod);
+  const highestPoint = Math.max(...recentData.map(d => d.high));
+  const lowestPoint = Math.min(...recentData.map(d => d.low));
+  const diff = highestPoint - lowestPoint;
+  
+  // Standard Fibonacci retracement levels
+  const fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+  
+  return fibLevels.map(level => {
+    // For uptrend: Subtract retracement from highest point
+    return highestPoint - (diff * level);
+  });
+};
+
+// Detect trend lines
+export const detectTrendLines = (
+  data: KlineData[],
+  lookbackPeriod: number = 50
+): { uptrend: {start: number, end: number, slope: number}[], downtrend: {start: number, end: number, slope: number}[] } => {
+  if (data.length < lookbackPeriod) {
+    return { uptrend: [], downtrend: [] };
+  }
+  
+  const recentData = data.slice(-lookbackPeriod);
+  const uptrend: {start: number, end: number, slope: number}[] = [];
+  const downtrend: {start: number, end: number, slope: number}[] = [];
+  
+  // Find local minima for uptrend lines
+  const localMinIndices: number[] = [];
+  for (let i = 2; i < recentData.length - 2; i++) {
+    if (recentData[i].low < recentData[i-1].low && 
+        recentData[i].low < recentData[i-2].low && 
+        recentData[i].low < recentData[i+1].low && 
+        recentData[i].low < recentData[i+2].low) {
+      localMinIndices.push(i);
+    }
+  }
+  
+  // Find local maxima for downtrend lines
+  const localMaxIndices: number[] = [];
+  for (let i = 2; i < recentData.length - 2; i++) {
+    if (recentData[i].high > recentData[i-1].high && 
+        recentData[i].high > recentData[i-2].high && 
+        recentData[i].high > recentData[i+1].high && 
+        recentData[i].high > recentData[i+2].high) {
+      localMaxIndices.push(i);
+    }
+  }
+  
+  // Connect minima for uptrend lines
+  for (let i = 0; i < localMinIndices.length - 1; i++) {
+    const start = localMinIndices[i];
+    const end = localMinIndices[i + 1];
+    
+    // Only consider as uptrend if second point is higher
+    if (recentData[end].low > recentData[start].low) {
+      const slope = (recentData[end].low - recentData[start].low) / (end - start);
+      uptrend.push({
+        start: data.length - lookbackPeriod + start,
+        end: data.length - lookbackPeriod + end,
+        slope
+      });
+    }
+  }
+  
+  // Connect maxima for downtrend lines
+  for (let i = 0; i < localMaxIndices.length - 1; i++) {
+    const start = localMaxIndices[i];
+    const end = localMaxIndices[i + 1];
+    
+    // Only consider as downtrend if second point is lower
+    if (recentData[end].high < recentData[start].high) {
+      const slope = (recentData[end].high - recentData[start].high) / (end - start);
+      downtrend.push({
+        start: data.length - lookbackPeriod + start,
+        end: data.length - lookbackPeriod + end,
+        slope
+      });
+    }
+  }
+  
+  return { uptrend, downtrend };
+};
+
+// Detect chart patterns
+export const detectPatterns = (
+  data: KlineData[]
+): { 
+  headAndShoulders: number[], 
+  doubleTop: number[], 
+  doubleBottom: number[],
+  triangle: { start: number, end: number, type: 'ascending' | 'descending' | 'symmetrical' }[] 
+} => {
+  const result = {
+    headAndShoulders: [] as number[],
+    doubleTop: [] as number[],
+    doubleBottom: [] as number[],
+    triangle: [] as { start: number, end: number, type: 'ascending' | 'descending' | 'symmetrical' }[]
+  };
+  
+  if (data.length < 100) return result;
+  
+  // Find local maxima and minima
+  const localMaxIndices: number[] = [];
+  const localMinIndices: number[] = [];
+  
+  for (let i = 5; i < data.length - 5; i++) {
+    // Local maximum
+    let isMax = true;
+    for (let j = 1; j <= 5; j++) {
+      if (data[i].high <= data[i-j].high || data[i].high <= data[i+j].high) {
+        isMax = false;
+        break;
+      }
+    }
+    if (isMax) localMaxIndices.push(i);
+    
+    // Local minimum
+    let isMin = true;
+    for (let j = 1; j <= 5; j++) {
+      if (data[i].low >= data[i-j].low || data[i].low >= data[i+j].low) {
+        isMin = false;
+        break;
+      }
+    }
+    if (isMin) localMinIndices.push(i);
+  }
+  
+  // Detect Double Top
+  for (let i = 0; i < localMaxIndices.length - 1; i++) {
+    const first = localMaxIndices[i];
+    const second = localMaxIndices[i + 1];
+    
+    // Check if the two tops are roughly at the same level
+    if (Math.abs(data[first].high - data[second].high) / data[first].high < 0.015 &&
+        second - first > 10 && second - first < 50) {
+      result.doubleTop.push(second);
+    }
+  }
+  
+  // Detect Double Bottom
+  for (let i = 0; i < localMinIndices.length - 1; i++) {
+    const first = localMinIndices[i];
+    const second = localMinIndices[i + 1];
+    
+    // Check if the two bottoms are roughly at the same level
+    if (Math.abs(data[first].low - data[second].low) / data[first].low < 0.015 &&
+        second - first > 10 && second - first < 50) {
+      result.doubleBottom.push(second);
+    }
+  }
+  
+  // Detect Head and Shoulders
+  for (let i = 0; i < localMaxIndices.length - 2; i++) {
+    const leftShoulder = localMaxIndices[i];
+    const head = localMaxIndices[i + 1];
+    const rightShoulder = localMaxIndices[i + 2];
+    
+    // Head must be higher than shoulders
+    if (data[head].high > data[leftShoulder].high && 
+        data[head].high > data[rightShoulder].high) {
+      
+      // Shoulders should be at similar heights
+      if (Math.abs(data[leftShoulder].high - data[rightShoulder].high) / data[leftShoulder].high < 0.05) {
+        result.headAndShoulders.push(head);
+      }
+    }
+  }
+  
+  // Detect Triangles
+  for (let i = 0; i < data.length - 30; i++) {
+    const windowData = data.slice(i, i + 30);
+    
+    // Get highs and lows of the window
+    const highs = windowData.map(d => d.high);
+    const lows = windowData.map(d => d.low);
+    
+    // Simple linear regression on highs and lows
+    const highTrend = calculateTrendSlope(highs);
+    const lowTrend = calculateTrendSlope(lows);
+    
+    // Detect triangle type
+    if (Math.abs(highTrend) < 0.001 && lowTrend > 0.001) {
+      // Ascending triangle: Flat top, rising bottom
+      result.triangle.push({
+        start: i,
+        end: i + 30,
+        type: 'ascending'
+      });
+    } else if (highTrend < -0.001 && Math.abs(lowTrend) < 0.001) {
+      // Descending triangle: Falling top, flat bottom
+      result.triangle.push({
+        start: i,
+        end: i + 30,
+        type: 'descending'
+      });
+    } else if (highTrend < -0.001 && lowTrend > 0.001) {
+      // Symmetrical triangle: Falling top, rising bottom
+      result.triangle.push({
+        start: i,
+        end: i + 30,
+        type: 'symmetrical'
+      });
+    }
+  }
+  
+  return result;
+};
+
+// Helper function to calculate trend slope
+const calculateTrendSlope = (values: number[]): number => {
+  const n = values.length;
+  if (n < 2) return 0;
+  
+  const indices = Array.from({length: n}, (_, i) => i);
+  
+  // Calculate means
+  const meanX = indices.reduce((sum, x) => sum + x, 0) / n;
+  const meanY = values.reduce((sum, y) => sum + y, 0) / n;
+  
+  // Calculate slope
+  let numerator = 0;
+  let denominator = 0;
+  
+  for (let i = 0; i < n; i++) {
+    numerator += (indices[i] - meanX) * (values[i] - meanY);
+    denominator += Math.pow(indices[i] - meanX, 2);
+  }
+  
+  return denominator !== 0 ? numerator / denominator : 0;
+};
+
