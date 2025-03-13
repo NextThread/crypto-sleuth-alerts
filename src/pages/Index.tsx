@@ -16,13 +16,19 @@ const DEFAULT_SYMBOL = 'BTCUSDT';
 const Index = () => {
   const [symbol, setSymbol] = useState<string>(DEFAULT_SYMBOL);
   const [interval, setInterval] = useState<TimeInterval>('15m');
-  const [chartControls, setChartControls] = useState<ChartControlsState>({
-    showSupportResistance: true,
-    showEntryExitPoints: true, 
-    showPatterns: true,
-    showFibonacciLevels: true,
-    showTrendLines: true
+  const [chartControls, setChartControls] = useState<ChartControlsState>(() => {
+    // Get chart controls from localStorage on mount
+    const savedControls = localStorage.getItem('chartControls');
+    return savedControls ? JSON.parse(savedControls) : {
+      showSupportResistance: true,
+      showEntryExitPoints: true, 
+      showPatterns: true,
+      showFibonacciLevels: true,
+      showTrendLines: true,
+      chartType: 'line'
+    };
   });
+  
   const { toast } = useToast();
   
   useEffect(() => {

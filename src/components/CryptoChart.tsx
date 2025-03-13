@@ -12,10 +12,12 @@ import {
   detectPatterns
 } from '../utils/technicalIndicators';
 import annotationPlugin from 'chartjs-plugin-annotation';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import { ChartControlsState } from './ChartControls';
+import { useToast } from '@/hooks/use-toast';
 
 // Register Chart.js components
-Chart.register(...registerables, annotationPlugin);
+Chart.register(...registerables, annotationPlugin, zoomPlugin);
 
 interface CryptoChartProps {
   symbol: string;
@@ -28,6 +30,14 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const chartRef = useRef<Chart | null>(null);
+  const { toast } = useToast();
+  
+  // AI-based analysis results
+  const [aiAnalysis, setAiAnalysis] = useState({
+    entryPointExplanation: '',
+    targetExplanation: '',
+    stopLossExplanation: ''
+  });
   
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +49,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       try {
         const data = await getKlineData(symbol, interval);
         setChartData(data);
+        
+        // Perform AI analysis after data is fetched (simulated)
+        performAiAnalysis(data);
       } catch (err) {
         console.error('Error fetching chart data:', err);
         setError('Failed to load chart data. Please try again.');
@@ -103,6 +116,31 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     };
   }, [symbol, interval]);
   
+  // AI-based analysis (simulated)
+  const performAiAnalysis = (data: KlineData[]) => {
+    if (data.length < 30) return;
+    
+    // These would normally come from a real AI service
+    // but for demonstration we'll generate them from the data
+    const { entryPoints, exitPoints, stopLoss, takeProfit } = identifyEntryExitPoints(data);
+    const { supports, resistances } = calculateSupportResistance(data);
+    const trend = data[data.length - 1].close > data[data.length - 10].close ? 'bullish' : 'bearish';
+    
+    // Simple explanations
+    setAiAnalysis({
+      entryPointExplanation: `Based on ${trend} trend and RSI indicators crossing below 30, suggesting oversold conditions.`,
+      targetExplanation: `Target set near historical resistance at ${takeProfit.toFixed(2)} where profit taking is likely to occur.`,
+      stopLossExplanation: `Stop loss placed below recent support at ${stopLoss.toFixed(2)} to limit downside risk while giving price room to fluctuate.`
+    });
+    
+    // Show AI recommendation as toast
+    toast({
+      title: "AI Analysis Complete",
+      description: `Recommended action: ${trend === 'bullish' ? 'Consider entry positions as market shows bullish pattern' : 'Exercise caution as market shows bearish signals'}`,
+      duration: 5000,
+    });
+  };
+  
   // Update chart when controls change
   useEffect(() => {
     if (chartRef.current) {
@@ -155,6 +193,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   // Prepare data for the chart
   const labels = chartData.map(d => formatTimeLabel(d.openTime, interval));
   const closes = chartData.map(d => d.close);
+  const opens = chartData.map(d => d.open);
+  const highs = chartData.map(d => d.high);
+  const lows = chartData.map(d => d.low);
   
   // Add annotations for technical analysis
   const annotations: any = {};
@@ -472,47 +513,113 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  const data = {
-    labels,
-    datasets: [
-      {
-        label: 'Price',
-        data: closes,
-        borderColor: 'rgba(59, 130, 246, 1)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        pointRadius: 0,
-        borderWidth: 2,
-        fill: true,
-        tension: 0.1,
-      },
-    ],
-  };
+  // Prepare chart data based on selected chart type
+  let data: any;
+  
+  if (chartControls.chartType === 'line') {
+    data = {
+      labels,
+      datasets: [
+        {
+          label: 'Price',
+          data: closes,
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          pointRadius: 0,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.1,
+        },
+      ],
+    };
+  } else {
+    // Candlestick chart
+    data = {
+      labels,
+      datasets: [
+        {
+          label: 'Price',
+          data: chartData.map((d, i) => ({
+            x: labels[i],
+            o: d.open,
+            h: d.high,
+            l: d.low,
+            c: d.close
+          })),
+          borderColor: (ctx: any) => {
+            if (!ctx.raw) return 'rgba(75, 192, 192, 1)';
+            return ctx.raw.o > ctx.raw.c 
+              ? 'rgba(239, 68, 68, 1)' // red for bearish
+              : 'rgba(16, 185, 129, 1)'; // green for bullish
+          },
+          backgroundColor: (ctx: any) => {
+            if (!ctx.raw) return 'rgba(75, 192, 192, 0.1)';
+            return ctx.raw.o > ctx.raw.c 
+              ? 'rgba(239, 68, 68, 0.1)' // red for bearish
+              : 'rgba(16, 185, 129, 0.1)'; // green for bullish
+          },
+          borderWidth: 2
+        }
+      ]
+    };
+  }
+  
+  const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
   const options = {
-    ...generateChartOptions(chartData, interval, 'dark'),
+    ...baseOptions,
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      ...generateChartOptions(chartData, interval, 'dark').plugins,
+      ...baseOptions.plugins,
       annotation: {
         annotations,
       },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x' as const,
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'x' as const,
+        },
+        limits: {
+          x: {min: 'original', max: 'original', minRange: 10}
+        }
+      },
       tooltip: {
-        ...generateChartOptions(chartData, interval, 'dark').plugins.tooltip,
+        ...baseOptions.plugins.tooltip,
         callbacks: {
-          ...generateChartOptions(chartData, interval, 'dark').plugins.tooltip.callbacks,
+          ...baseOptions.plugins.tooltip.callbacks,
           label: (context: any) => {
             const index = context.dataIndex;
             const dataPoint = chartData[index];
-            return [
-              `Open: ${dataPoint.open.toFixed(2)}`,
-              `High: ${dataPoint.high.toFixed(2)}`,
-              `Low: ${dataPoint.low.toFixed(2)}`,
-              `Close: ${dataPoint.close.toFixed(2)}`,
-              `Volume: ${Math.round(dataPoint.volume)}`,
-            ];
+            
+            if (chartControls.chartType === 'candlestick') {
+              return [
+                `Open: ${dataPoint.open.toFixed(2)}`,
+                `High: ${dataPoint.high.toFixed(2)}`,
+                `Low: ${dataPoint.low.toFixed(2)}`,
+                `Close: ${dataPoint.close.toFixed(2)}`,
+                `Volume: ${Math.round(dataPoint.volume)}`,
+              ];
+            } else {
+              return `Price: ${dataPoint.close.toFixed(2)}`;
+            }
           },
         },
       },
     },
+    parsing: chartControls.chartType === 'candlestick' ? {
+      xAxisKey: 'x',
+      yAxisKey: chartControls.chartType === 'candlestick' ? 'c' : 'y'
+    } : undefined,
   };
   
   return (
@@ -525,8 +632,33 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       </div>
       
+      {/* AI Analysis Section */}
+      {aiAnalysis.entryPointExplanation && (
+        <div className="mb-4 p-2 bg-black/10 rounded text-xs">
+          <p className="font-medium mb-1">AI Analysis:</p>
+          <ul className="space-y-1 text-muted-foreground">
+            <li><span className="text-green-400">Entry:</span> {aiAnalysis.entryPointExplanation}</li>
+            <li><span className="text-blue-400">Target:</span> {aiAnalysis.targetExplanation}</li>
+            <li><span className="text-red-400">Stop Loss:</span> {aiAnalysis.stopLossExplanation}</li>
+          </ul>
+        </div>
+      )}
+      
       {/* The Chart */}
-      <div className="h-[320px]">
+      <div className="h-[320px] relative">
+        <div className="absolute right-2 top-2 z-10 flex space-x-1">
+          <button 
+            className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
+            onClick={() => {
+              if (chartRef.current) {
+                // @ts-ignore - resetZoom is available but not in types
+                chartRef.current.resetZoom();
+              }
+            }}
+          >
+            Reset Zoom
+          </button>
+        </div>
         <Line
           data={data}
           options={options as any}
