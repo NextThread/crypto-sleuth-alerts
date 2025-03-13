@@ -68,9 +68,9 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
     fetchData();
     
     // Update data periodically
-    const interval = setInterval(fetchData, 60000); // Update every minute
+    const updateInterval = setInterval(fetchData, 60000); // Update every minute
     
-    return () => clearInterval(interval);
+    return () => clearInterval(updateInterval);
   }, [symbol, interval]);
   
   // Helper function to get RSI class
