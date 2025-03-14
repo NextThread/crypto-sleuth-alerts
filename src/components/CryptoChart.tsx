@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables, ChartType } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -538,7 +539,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       zoom: {
         pan: {
           enabled: true,
-          mode: 'xy',
+          mode: 'xy' as const, // Fix for string type error
         },
         zoom: {
           wheel: {
@@ -547,7 +548,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           pinch: {
             enabled: true
           },
-          mode: 'xy',
+          mode: 'xy' as const, // Fix for string type error
         },
         limits: {
           x: {min: 'original', max: 'original', minRange: 10},
@@ -579,6 +580,26 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         },
       },
     },
+    interaction: {
+      mode: 'nearest' as const, // Fix for string type error
+      intersect: false,
+    },
+    scales: {
+      ...baseOptions.scales,
+      x: {
+        ...baseOptions.scales.x,
+        ticks: {
+          ...baseOptions.scales.x.ticks,
+          // Fixed the callback property to use the x ticks formatter
+          maxRotation: 0,
+          color: 'rgba(255, 255, 255, 0.5)',
+          font: {
+            size: 10,
+          },
+          maxTicksLimit: 8,
+        }
+      }
+    }
   };
   
   let data: any;
@@ -600,12 +621,13 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       ],
     };
   } else {
+    // Candlestick data
     data = {
       labels,
       datasets: [
         {
           type: 'candlestick' as ChartType,
-          label: 'Price',
+          label: 'OHLC',
           data: chartData.map((d) => ({
             o: d.open,
             h: d.high,
@@ -631,20 +653,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           }
         }
       ]
-    };
-    
-    options.scales = {
-      ...options.scales,
-      x: {
-        ...options.scales.x,
-        ticks: {
-          ...options.scales.x.ticks,
-          callback: function(val: any) {
-            const index = typeof val === 'number' ? val : parseInt(val);
-            return index % Math.ceil(labels.length / 10) === 0 ? labels[index] : '';
-          }
-        }
-      }
     };
   }
   
@@ -681,29 +689,17 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
             Reset Zoom
           </button>
         </div>
-        {chartControls.chartType === 'line' ? (
-          <Line
-            data={data}
-            options={options}
-            height={320}
-            ref={(ref) => {
-              if (ref) {
-                chartRef.current = ref;
-              }
-            }}
-          />
-        ) : (
-          <Line
-            data={data}
-            options={options}
-            height={320}
-            ref={(ref) => {
-              if (ref) {
-                chartRef.current = ref;
-              }
-            }}
-          />
-        )}
+        
+        <Line
+          data={data}
+          options={options}
+          height={320}
+          ref={(ref) => {
+            if (ref) {
+              chartRef.current = ref.current;
+            }
+          }}
+        />
       </div>
     </div>
   );
