@@ -20,7 +20,14 @@ const DEFAULT_CHART_CONTROLS: ChartControlsState = {
   showPatterns: true,
   showFibonacciLevels: true,
   showTrendLines: true,
-  chartType: 'line'
+  chartType: 'line',
+  patternControls: {
+    showHeadAndShoulders: true,
+    showDoubleTop: true,
+    showDoubleBottom: true,
+    showTriangle: true,
+    showWedge: true
+  }
 };
 
 const Index = () => {
@@ -30,7 +37,17 @@ const Index = () => {
     // Get chart controls from localStorage on mount
     try {
       const savedControls = localStorage.getItem('chartControls');
-      return savedControls ? { ...DEFAULT_CHART_CONTROLS, ...JSON.parse(savedControls) } : DEFAULT_CHART_CONTROLS;
+      const parsedControls = savedControls ? JSON.parse(savedControls) : {};
+      
+      // Ensure pattern controls are properly merged with defaults
+      return { 
+        ...DEFAULT_CHART_CONTROLS, 
+        ...parsedControls,
+        patternControls: {
+          ...DEFAULT_CHART_CONTROLS.patternControls,
+          ...(parsedControls.patternControls || {})
+        }
+      };
     } catch (error) {
       console.error('Error parsing localStorage chart controls', error);
       return DEFAULT_CHART_CONTROLS;
@@ -80,7 +97,16 @@ const Index = () => {
   };
   
   const handleChartControlsChange = (newControls: ChartControlsState) => {
-    setChartControls(newControls);
+    // Ensure patternControls is properly maintained
+    const mergedControls = {
+      ...newControls,
+      patternControls: {
+        ...DEFAULT_CHART_CONTROLS.patternControls,
+        ...(newControls.patternControls || {})
+      }
+    };
+    
+    setChartControls(mergedControls);
   };
   
   return (

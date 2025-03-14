@@ -13,8 +13,9 @@ import {
 } from '../utils/technicalIndicators';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { ChartControlsState } from './ChartControls';
+import { PatternControlsState, ChartControlsState } from './ChartControls';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import 'chart.js/auto';
 
 // Register Chart.js components
@@ -185,9 +186,11 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const opens = chartData.map(d => d.open);
   const highs = chartData.map(d => d.high);
   const lows = chartData.map(d => d.low);
+  const volumes = chartData.map(d => d.volume);
   
   const annotations: any = {};
   
+  // Add support and resistance lines
   if (chartControls.showSupportResistance) {
     supports.slice(0, 3).forEach((level, i) => {
       annotations[`support${i}`] = {
@@ -232,6 +235,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
+  // Add fibonacci levels
   if (chartControls.showFibonacciLevels) {
     fibLevels.forEach((level, i) => {
       const fibPercents = [0, 23.6, 38.2, 50, 61.8, 78.6, 100];
@@ -255,6 +259,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
+  // Add trend lines
   if (chartControls.showTrendLines) {
     uptrend.forEach((trend, i) => {
       const startValue = chartData[trend.start].low;
@@ -309,12 +314,15 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
+  // Add entry/exit points near the latest candle for better visibility
   if (chartControls.showEntryExitPoints) {
-    entryPoints.slice(-3).forEach((point, i) => {
-      annotations[`entry${i}`] = {
+    // Show only the most recent entry point near the last candle
+    const lastEntryPoint = entryPoints.length > 0 ? entryPoints[entryPoints.length - 1] : null;
+    if (lastEntryPoint !== null) {
+      annotations[`entry`] = {
         type: 'point',
-        xValue: labels[point],
-        yValue: chartData[point].close,
+        xValue: labels[lastEntryPoint],
+        yValue: chartData[lastEntryPoint].close,
         backgroundColor: '#F2FCE2',
         borderColor: 'rgba(16, 185, 129, 0.8)',
         borderWidth: 2,
@@ -330,13 +338,15 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           },
         },
       };
-    });
+    }
     
-    exitPoints.slice(-3).forEach((point, i) => {
-      annotations[`exit${i}`] = {
+    // Show only the most recent exit point near the last candle
+    const lastExitPoint = exitPoints.length > 0 ? exitPoints[exitPoints.length - 1] : null;
+    if (lastExitPoint !== null) {
+      annotations[`exit`] = {
         type: 'point',
-        xValue: labels[point],
-        yValue: chartData[point].close,
+        xValue: labels[lastExitPoint],
+        yValue: chartData[lastExitPoint].close,
         backgroundColor: '#0EA5E9',
         radius: 5,
         label: {
@@ -350,8 +360,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           },
         },
       };
-    });
+    }
     
+    // Add stop loss and take profit lines with improved positioning
     if (stopLoss > 0) {
       annotations['stopLoss'] = {
         type: 'line',
@@ -380,7 +391,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         label: {
           display: true,
           content: 'Take Profit',
-          position: 'start',
+          position: 'end',  // Position at the end for better separation from stop loss
           backgroundColor: '#0EA5E9',
           color: '#fff',
           font: {
@@ -393,148 +404,229 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   }
   
-  // Always show patterns without toggle controls
-  if (chartControls.showPatterns) {
+  // Pattern detection with filtered display by pattern type
+  if (chartControls.showPatterns && chartControls.patternControls) {
+    const patternControls = chartControls.patternControls;
+    
+    // Add patterns with padding for better visibility and prevention of overlap
+    let currentPatternBoxes: { startIdx: number, endIdx: number, yMin: number, yMax: number }[] = [];
+    
     // Head and Shoulders Pattern
-    if (patterns.headAndShoulders) {
+    if (patternControls.showHeadAndShoulders && patterns.headAndShoulders) {
       patterns.headAndShoulders.forEach((index, i) => {
-        annotations[`handS${i}`] = {
-          type: 'box',
-          xMin: labels[Math.max(0, index - 10)],
-          xMax: labels[Math.min(chartData.length - 1, index + 10)],
-          yMin: chartData[index].low * 0.99,
-          yMax: chartData[index].high * 1.01,
-          backgroundColor: 'rgba(244, 114, 182, 0.2)',
-          borderColor: 'rgba(244, 114, 182, 0.8)',
-          borderWidth: 2,
-          label: {
-            display: true,
-            content: 'H&S Pattern',
-            position: 'center',
-            backgroundColor: 'rgba(244, 114, 182, 0.8)',
-            color: '#fff',
-            font: {
-              size: 10,
+        const startIdx = Math.max(0, index - 10);
+        const endIdx = Math.min(chartData.length - 1, index + 10);
+        const yMin = chartData[index].low * 0.99;
+        const yMax = chartData[index].high * 1.01;
+        
+        // Check if this pattern overlaps with any existing pattern
+        const overlap = currentPatternBoxes.some(box => 
+          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
+          (yMin <= box.yMax && yMax >= box.yMin)
+        );
+        
+        if (!overlap) {
+          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
+          
+          annotations[`handS${i}`] = {
+            type: 'box',
+            xMin: labels[startIdx],
+            xMax: labels[endIdx],
+            yMin,
+            yMax,
+            backgroundColor: 'rgba(244, 114, 182, 0.2)',
+            borderColor: 'rgba(244, 114, 182, 0.8)',
+            borderWidth: 2,
+            label: {
+              display: true,
+              content: 'H&S Pattern',
+              position: 'center',
+              backgroundColor: 'rgba(244, 114, 182, 0.8)',
+              color: '#fff',
+              font: {
+                size: 10,
+              },
             },
-          },
-        };
+          };
+        }
       });
     }
     
     // Double Top Pattern
-    if (patterns.doubleTop) {
+    if (patternControls.showDoubleTop && patterns.doubleTop) {
       patterns.doubleTop.forEach((index, i) => {
-        annotations[`doubleTop${i}`] = {
-          type: 'box',
-          xMin: labels[Math.max(0, index - 8)],
-          xMax: labels[Math.min(chartData.length - 1, index + 8)],
-          yMin: chartData[index].low * 0.99,
-          yMax: chartData[index].high * 1.01,
-          backgroundColor: 'rgba(249, 115, 22, 0.2)',
-          borderColor: 'rgba(249, 115, 22, 0.8)',
-          borderWidth: 2,
-          label: {
-            display: true,
-            content: 'Double Top',
-            position: 'center',
-            backgroundColor: 'rgba(249, 115, 22, 0.8)',
-            color: '#fff',
-            font: {
-              size: 10,
+        const startIdx = Math.max(0, index - 8);
+        const endIdx = Math.min(chartData.length - 1, index + 8);
+        const yMin = chartData[index].low * 0.99;
+        const yMax = chartData[index].high * 1.01;
+        
+        // Check for overlap
+        const overlap = currentPatternBoxes.some(box => 
+          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
+          (yMin <= box.yMax && yMax >= box.yMin)
+        );
+        
+        if (!overlap) {
+          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
+          
+          annotations[`doubleTop${i}`] = {
+            type: 'box',
+            xMin: labels[startIdx],
+            xMax: labels[endIdx],
+            yMin,
+            yMax,
+            backgroundColor: 'rgba(249, 115, 22, 0.2)',
+            borderColor: 'rgba(249, 115, 22, 0.8)',
+            borderWidth: 2,
+            label: {
+              display: true,
+              content: 'Double Top',
+              position: 'center',
+              backgroundColor: 'rgba(249, 115, 22, 0.8)',
+              color: '#fff',
+              font: {
+                size: 10,
+              },
             },
-          },
-        };
+          };
+        }
       });
     }
     
     // Double Bottom Pattern
-    if (patterns.doubleBottom) {
+    if (patternControls.showDoubleBottom && patterns.doubleBottom) {
       patterns.doubleBottom.forEach((index, i) => {
-        annotations[`doubleBottom${i}`] = {
-          type: 'box',
-          xMin: labels[Math.max(0, index - 8)],
-          xMax: labels[Math.min(chartData.length - 1, index + 8)],
-          yMin: chartData[index].low * 0.99,
-          yMax: chartData[index].high * 1.01,
-          backgroundColor: 'rgba(16, 185, 129, 0.2)',
-          borderColor: 'rgba(16, 185, 129, 0.8)',
-          borderWidth: 2,
-          label: {
-            display: true,
-            content: 'Double Bottom',
-            position: 'center',
-            backgroundColor: 'rgba(16, 185, 129, 0.8)',
-            color: '#fff',
-            font: {
-              size: 10,
+        const startIdx = Math.max(0, index - 8);
+        const endIdx = Math.min(chartData.length - 1, index + 8);
+        const yMin = chartData[index].low * 0.99;
+        const yMax = chartData[index].high * 1.01;
+        
+        // Check for overlap
+        const overlap = currentPatternBoxes.some(box => 
+          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
+          (yMin <= box.yMax && yMax >= box.yMin)
+        );
+        
+        if (!overlap) {
+          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
+          
+          annotations[`doubleBottom${i}`] = {
+            type: 'box',
+            xMin: labels[startIdx],
+            xMax: labels[endIdx],
+            yMin,
+            yMax,
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: 'rgba(16, 185, 129, 0.8)',
+            borderWidth: 2,
+            label: {
+              display: true,
+              content: 'Double Bottom',
+              position: 'center',
+              backgroundColor: 'rgba(16, 185, 129, 0.8)',
+              color: '#fff',
+              font: {
+                size: 10,
+              },
             },
-          },
-        };
+          };
+        }
       });
     }
     
     // Triangle Pattern
-    if (patterns.triangle) {
+    if (patternControls.showTriangle && patterns.triangle) {
       patterns.triangle.forEach((triangle, i) => {
         const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : 
                       triangle.type === 'descending' ? 'rgba(239, 68, 68, 0.8)' : 
                       'rgba(59, 130, 246, 0.8)';
         
-        annotations[`triangle${i}`] = {
-          type: 'box',
-          xMin: labels[triangle.start],
-          xMax: labels[triangle.end],
-          yMin: Math.min(...chartData.slice(triangle.start, triangle.end + 1).map(d => d.low)) * 0.99,
-          yMax: Math.max(...chartData.slice(triangle.start, triangle.end + 1).map(d => d.high)) * 1.01,
-          backgroundColor: color.replace('0.8', '0.2'),
-          borderColor: color,
-          borderWidth: 2,
-          label: {
-            display: true,
-            content: `${triangle.type.charAt(0).toUpperCase() + triangle.type.slice(1)} Triangle`,
-            position: 'center',
-            backgroundColor: color,
-            color: '#fff',
-            font: {
-              size: 10,
+        const startIdx = triangle.start;
+        const endIdx = triangle.end;
+        const yMin = Math.min(...chartData.slice(startIdx, endIdx + 1).map(d => d.low)) * 0.99;
+        const yMax = Math.max(...chartData.slice(startIdx, endIdx + 1).map(d => d.high)) * 1.01;
+        
+        // Check for overlap
+        const overlap = currentPatternBoxes.some(box => 
+          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
+          (yMin <= box.yMax && yMax >= box.yMin)
+        );
+        
+        if (!overlap) {
+          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
+          
+          annotations[`triangle${i}`] = {
+            type: 'box',
+            xMin: labels[startIdx],
+            xMax: labels[endIdx],
+            yMin,
+            yMax,
+            backgroundColor: color.replace('0.8', '0.2'),
+            borderColor: color,
+            borderWidth: 2,
+            label: {
+              display: true,
+              content: `${triangle.type.charAt(0).toUpperCase() + triangle.type.slice(1)} Triangle`,
+              position: 'center',
+              backgroundColor: color,
+              color: '#fff',
+              font: {
+                size: 10,
+              },
             },
-          },
-        };
+          };
+        }
       });
     }
     
     // Wedge Pattern
-    if (patterns.wedge) {
+    if (patternControls.showWedge && patterns.wedge) {
       patterns.wedge.forEach((wedge, i) => {
         const color = wedge.type === 'rising' ? 'rgba(16, 185, 129, 0.8)' : 
                       'rgba(239, 68, 68, 0.8)';
         
-        annotations[`wedge${i}`] = {
-          type: 'box',
-          xMin: labels[wedge.start],
-          xMax: labels[wedge.end],
-          yMin: Math.min(...chartData.slice(wedge.start, wedge.end + 1).map(d => d.low)) * 0.99,
-          yMax: Math.max(...chartData.slice(wedge.start, wedge.end + 1).map(d => d.high)) * 1.01,
-          backgroundColor: color.replace('0.8', '0.2'),
-          borderColor: color,
-          borderWidth: 2,
-          label: {
-            display: true,
-            content: `${wedge.type.charAt(0).toUpperCase() + wedge.type.slice(1)} Wedge`,
-            position: 'center',
-            backgroundColor: color,
-            color: '#fff',
-            font: {
-              size: 10,
+        const startIdx = wedge.start;
+        const endIdx = wedge.end;
+        const yMin = Math.min(...chartData.slice(startIdx, endIdx + 1).map(d => d.low)) * 0.99;
+        const yMax = Math.max(...chartData.slice(startIdx, endIdx + 1).map(d => d.high)) * 1.01;
+        
+        // Check for overlap
+        const overlap = currentPatternBoxes.some(box => 
+          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
+          (yMin <= box.yMax && yMax >= box.yMin)
+        );
+        
+        if (!overlap) {
+          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
+          
+          annotations[`wedge${i}`] = {
+            type: 'box',
+            xMin: labels[startIdx],
+            xMax: labels[endIdx],
+            yMin,
+            yMax,
+            backgroundColor: color.replace('0.8', '0.2'),
+            borderColor: color,
+            borderWidth: 2,
+            label: {
+              display: true,
+              content: `${wedge.type.charAt(0).toUpperCase() + wedge.type.slice(1)} Wedge`,
+              position: 'center',
+              backgroundColor: color,
+              color: '#fff',
+              font: {
+                size: 10,
+              },
             },
-          },
-        };
+          };
+        }
       });
     }
   }
   
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
+  // Setup chart options with improved zoom and scroll
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -546,19 +638,27 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         pan: {
           enabled: true,
           mode: 'xy' as const,
+          modifierKey: 'shift' as const, // Hold shift key to pan
         },
         zoom: {
           wheel: {
             enabled: true,
+            speed: 0.1,
           },
           pinch: {
             enabled: true
           },
           mode: 'xy' as const,
+          drag: {
+            enabled: true,
+            backgroundColor: 'rgba(59, 130, 246, 0.3)',
+            borderColor: 'rgba(59, 130, 246, 0.8)',
+            borderWidth: 1,
+          },
         },
         limits: {
-          x: {min: 'original', max: 'original', minRange: 10},
-          y: {min: 'original', max: 'original', minRange: 10}
+          x: {min: 'original' as const, max: 'original' as const, minRange: 10},
+          y: {min: 'original' as const, max: 'original' as const, minRange: 10}
         }
       },
       tooltip: {
@@ -602,15 +702,16 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     },
     scales: {
       x: {
-        ...baseOptions.scales.x,
         ticks: {
-          ...baseOptions.scales.x.ticks,
           maxRotation: 0,
           color: 'rgba(255, 255, 255, 0.5)',
           font: {
             size: 10,
           },
           maxTicksLimit: 8,
+        },
+        grid: {
+          display: false,
         }
       },
       y: {
@@ -628,6 +729,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   };
   
+  // Define chart data based on chart type
   let data: any;
   
   if (chartControls.chartType === 'line') {
@@ -647,48 +749,58 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       ],
     };
   } else {
-    // Use line chart with customized styling for candlestick appearance
-    // since candlestick chart type is having issues
+    // Candlestick chart implementation
     data = {
       labels,
       datasets: [
         {
-          type: 'bar',
           label: 'Volume',
-          data: chartData.map(d => d.volume),
+          data: volumes,
+          type: 'bar' as const,
           backgroundColor: chartData.map(d => 
             d.close > d.open 
               ? 'rgba(16, 185, 129, 0.3)'
               : 'rgba(239, 68, 68, 0.3)'
           ),
-          yAxisID: 'volume',
+          yAxisID: 'volumeAxis',
           order: 2,
+          barPercentage: 0.3,
         },
         {
-          type: 'line',
-          label: 'Price',
-          data: closes,
-          borderColor: 'rgba(59, 130, 246, 1)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          pointRadius: 0,
-          borderWidth: 2,
-          tension: 0,
-          fill: false,
+          type: 'candlestick' as any,
+          label: 'OHLC',
+          data: chartData.map((d, i) => ({
+            x: labels[i],
+            o: d.open,
+            h: d.high,
+            l: d.low,
+            c: d.close
+          })),
+          borderColor: chartData.map(d => d.close >= d.open ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'),
+          color: {
+            up: 'rgba(16, 185, 129, 1)',
+            down: 'rgba(239, 68, 68, 1)',
+            unchanged: 'rgba(60, 60, 60, 1)',
+          },
           order: 1,
         }
       ],
     };
     
     // Add separate volume scale
-    options.scales.volume = {
-      position: 'left' as const,
-      grid: {
-        display: false,
-      },
-      ticks: {
-        display: false,
-      },
-      display: false,
+    options.scales = {
+      ...options.scales,
+      volumeAxis: {
+        position: 'left' as const,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          display: false,
+        },
+        display: true,
+        max: Math.max(...volumes) * 3,
+      }
     };
   }
   
@@ -701,33 +813,77 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       </div>
       
-      {aiAnalysis.entryPointExplanation && (
+      {/* AI Analysis with tooltips for more details */}
+      <TooltipProvider>
         <div className="mb-4 p-2 bg-black/10 rounded text-xs">
           <p className="font-medium mb-1">AI Analysis:</p>
           <ul className="space-y-1 text-muted-foreground">
-            <li><span className="text-green-400">Entry:</span> {aiAnalysis.entryPointExplanation}</li>
-            <li><span className="text-blue-400">Target:</span> {aiAnalysis.targetExplanation}</li>
-            <li><span className="text-red-400">Stop Loss:</span> {aiAnalysis.stopLossExplanation}</li>
+            <li className="flex items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center cursor-help">
+                    <span className="text-green-400 mr-1">Entry:</span> {aiAnalysis.entryPointExplanation}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                  <p>Entry points are determined using momentum indicators like RSI and MACD crossovers.</p>
+                </TooltipContent>
+              </Tooltip>
+            </li>
+            <li className="flex items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center cursor-help">
+                    <span className="text-blue-400 mr-1">Target:</span> {aiAnalysis.targetExplanation}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                  <p>Profit targets are set at key resistance levels or using risk-reward ratios.</p>
+                </TooltipContent>
+              </Tooltip>
+            </li>
+            <li className="flex items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center cursor-help">
+                    <span className="text-red-400 mr-1">Stop Loss:</span> {aiAnalysis.stopLossExplanation}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                  <p>Stop losses are placed below support levels to protect against adverse price movements.</p>
+                </TooltipContent>
+              </Tooltip>
+            </li>
           </ul>
         </div>
-      )}
+      </TooltipProvider>
       
       <div className="h-[320px] relative">
+        {/* Chart controls */}
         <div className="absolute right-2 top-2 z-10 flex space-x-1">
-          <button 
-            className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
-            onClick={() => {
-              if (chartRef.current) {
-                if (chartRef.current.chartInstance) {
-                  chartRef.current.chartInstance.resetZoom();
-                } else if (chartRef.current.current) {
-                  chartRef.current.current.resetZoom();
-                }
-              }
-            }}
-          >
-            Reset Zoom
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
+                  onClick={() => {
+                    if (chartRef.current) {
+                      if (chartRef.current.chartInstance) {
+                        chartRef.current.chartInstance.resetZoom();
+                      } else if (chartRef.current.current) {
+                        chartRef.current.current.resetZoom();
+                      }
+                    }
+                  }}
+                >
+                  Reset Zoom
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-black/80 text-white p-2">
+                <p>Reset chart zoom and pan to default view</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
         <Line
