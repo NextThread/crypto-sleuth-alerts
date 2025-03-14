@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Chart, registerables, ChartType } from 'chart.js';
+import { Chart, registerables, ChartType, ScaleOptions } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { formatTimeLabel, generateChartOptions } from '../utils/chartUtils';
@@ -605,6 +605,44 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
+  type ExtendedScales = {
+    x: {
+      ticks: {
+        maxRotation: number;
+        color: string;
+        font: {
+          size: number;
+        };
+        maxTicksLimit: number;
+      };
+      grid: {
+        display: boolean;
+      };
+    };
+    y: {
+      position: 'right';
+      grid: {
+        color: string;
+      };
+      ticks: {
+        color: string;
+        font: {
+          size: number;
+        };
+      };
+    };
+    y1?: {
+      position: 'left';
+      grid: {
+        display: boolean;
+      };
+      ticks: {
+        display: boolean;
+      };
+      max?: number;
+    };
+  };
+  
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -703,7 +741,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           },
         },
       }
-    }
+    } as ExtendedScales
   };
   
   let data: any;
@@ -755,18 +793,16 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       datasets: [volumeDataset, priceDataset],
     };
     
-    options.scales = {
-      ...options.scales,
-      y1: {
-        position: 'left' as const,
-        grid: {
-          display: false,
-        },
-        ticks: {
-          display: false,
-        },
-        max: Math.max(...volumes) * 3,
-      }
+    const scales = options.scales as ExtendedScales;
+    scales.y1 = {
+      position: 'left' as const,
+      grid: {
+        display: false,
+      },
+      ticks: {
+        display: false,
+      },
+      max: Math.max(...volumes) * 3,
     };
   }
   
