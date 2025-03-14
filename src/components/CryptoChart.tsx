@@ -579,7 +579,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         },
         titleFont: {
           size: 12,
-          weight: 'bold' as 'bold',
+          weight: 'bold' as const,
         },
         bodyFont: {
           size: 11,
@@ -603,6 +603,18 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           },
           maxTicksLimit: 8,
         }
+      },
+      y: {
+        position: 'right' as const,
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.5)',
+          font: {
+            size: 10,
+          },
+        },
       }
     }
   };
