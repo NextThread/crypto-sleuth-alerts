@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables, ChartType } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -539,7 +538,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       zoom: {
         pan: {
           enabled: true,
-          mode: 'xy' as const, // Fix for string type error
+          mode: 'xy' as const,
         },
         zoom: {
           wheel: {
@@ -548,7 +547,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           pinch: {
             enabled: true
           },
-          mode: 'xy' as const, // Fix for string type error
+          mode: 'xy' as const,
         },
         limits: {
           x: {min: 'original', max: 'original', minRange: 10},
@@ -578,10 +577,17 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
             }
           },
         },
+        titleFont: {
+          size: 12,
+          weight: 'bold' as 'bold',
+        },
+        bodyFont: {
+          size: 11,
+        },
       },
     },
     interaction: {
-      mode: 'nearest' as const, // Fix for string type error
+      mode: 'nearest' as const,
       intersect: false,
     },
     scales: {
@@ -590,7 +596,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         ...baseOptions.scales.x,
         ticks: {
           ...baseOptions.scales.x.ticks,
-          // Fixed the callback property to use the x ticks formatter
           maxRotation: 0,
           color: 'rgba(255, 255, 255, 0.5)',
           font: {
@@ -621,7 +626,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       ],
     };
   } else {
-    // Candlestick data
     data = {
       labels,
       datasets: [
