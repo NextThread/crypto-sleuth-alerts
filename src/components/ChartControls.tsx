@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Toggle } from '@/components/ui/toggle';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { 
@@ -15,7 +16,9 @@ import {
   LineChart,
   CandlestickChart,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Triangle,
+  Check
 } from 'lucide-react';
 
 export interface ChartControlsProps {
@@ -103,26 +106,18 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
           <Label className="text-sm font-medium mb-2">Chart Type</Label>
         </div>
         <div className="flex gap-2 mt-1">
-          <Toggle
-            variant="outline"
-            size="sm"
-            pressed={controls.chartType === 'line'}
-            onPressedChange={() => handleControlChange('chartType', 'line')}
-            className="flex items-center gap-1 data-[state=on]:bg-primary/20 data-[state=on]:text-primary"
-          >
-            <LineChart className="h-4 w-4" />
-            <span>Line</span>
-          </Toggle>
-          <Toggle
-            variant="outline"
-            size="sm"
-            pressed={controls.chartType === 'candlestick'}
-            onPressedChange={() => handleControlChange('chartType', 'candlestick')}
-            className="flex items-center gap-1 data-[state=on]:bg-primary/20 data-[state=on]:text-primary"
-          >
-            <CandlestickChart className="h-4 w-4" />
-            <span>Candlestick</span>
-          </Toggle>
+          <ToggleGroup type="single" value={controls.chartType} onValueChange={(value) => {
+            if (value) handleControlChange('chartType', value);
+          }}>
+            <ToggleGroupItem value="line" className="flex items-center gap-1 data-[state=on]:bg-primary/20 data-[state=on]:text-primary">
+              <LineChart className="h-4 w-4" />
+              <span>Line</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="candlestick" className="flex items-center gap-1 data-[state=on]:bg-primary/20 data-[state=on]:text-primary">
+              <CandlestickChart className="h-4 w-4" />
+              <span>Candlestick</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
       
@@ -173,7 +168,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
           {expandedPatterns && controls.showPatterns && (
             <div className="ml-6 mt-2 space-y-2 py-2 pl-2 border-l border-border/30">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Head & Shoulders</span>
+                <div className="flex items-center gap-2">
+                  <Triangle className="h-3 w-3 text-pink-400 rotate-180" />
+                  <span className="text-xs text-muted-foreground">Head & Shoulders</span>
+                </div>
                 <Switch 
                   checked={controls.patternControls.showHeadAndShoulders}
                   onCheckedChange={(checked) => handlePatternControlChange('showHeadAndShoulders', checked)}
@@ -182,7 +180,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Double Top</span>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-3 w-3 text-orange-400" />
+                  <span className="text-xs text-muted-foreground">Double Top</span>
+                </div>
                 <Switch 
                   checked={controls.patternControls.showDoubleTop}
                   onCheckedChange={(checked) => handlePatternControlChange('showDoubleTop', checked)}
@@ -191,7 +192,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Double Bottom</span>
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-3 w-3 text-green-400" />
+                  <span className="text-xs text-muted-foreground">Double Bottom</span>
+                </div>
                 <Switch 
                   checked={controls.patternControls.showDoubleBottom}
                   onCheckedChange={(checked) => handlePatternControlChange('showDoubleBottom', checked)}
@@ -200,7 +204,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Triangle</span>
+                <div className="flex items-center gap-2">
+                  <Triangle className="h-3 w-3 text-blue-400" />
+                  <span className="text-xs text-muted-foreground">Triangle</span>
+                </div>
                 <Switch 
                   checked={controls.patternControls.showTriangle}
                   onCheckedChange={(checked) => handlePatternControlChange('showTriangle', checked)}
@@ -209,7 +216,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Wedge</span>
+                <div className="flex items-center gap-2">
+                  <ArrowDown className="h-3 w-3 text-red-400 rotate-45" />
+                  <span className="text-xs text-muted-foreground">Wedge</span>
+                </div>
                 <Switch 
                   checked={controls.patternControls.showWedge}
                   onCheckedChange={(checked) => handlePatternControlChange('showWedge', checked)}

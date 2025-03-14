@@ -391,7 +391,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   }
   
   if (chartControls.showPatterns) {
-    if (patterns && patterns.headAndShoulders && chartControls.patternControls.showHeadAndShoulders) {
+    if (patterns.headAndShoulders && chartControls.patternControls.showHeadAndShoulders) {
       patterns.headAndShoulders.forEach((index, i) => {
         annotations[`handS${i}`] = {
           type: 'box',
@@ -416,7 +416,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns && patterns.doubleTop && chartControls.patternControls.showDoubleTop) {
+    if (patterns.doubleTop && chartControls.patternControls.showDoubleTop) {
       patterns.doubleTop.forEach((index, i) => {
         annotations[`doubleTop${i}`] = {
           type: 'box',
@@ -441,7 +441,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns && patterns.doubleBottom && chartControls.patternControls.showDoubleBottom) {
+    if (patterns.doubleBottom && chartControls.patternControls.showDoubleBottom) {
       patterns.doubleBottom.forEach((index, i) => {
         annotations[`doubleBottom${i}`] = {
           type: 'box',
@@ -466,7 +466,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns && patterns.triangle && chartControls.patternControls.showTriangle) {
+    if (patterns.triangle && chartControls.patternControls.showTriangle) {
       patterns.triangle.forEach((triangle, i) => {
         const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : 
                       triangle.type === 'descending' ? 'rgba(239, 68, 68, 0.8)' : 
@@ -495,7 +495,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns && patterns.wedge && chartControls.patternControls.showWedge) {
+    if (patterns.wedge && chartControls.patternControls.showWedge) {
       patterns.wedge.forEach((wedge, i) => {
         const color = wedge.type === 'rising' ? 'rgba(16, 185, 129, 0.8)' : 
                       'rgba(239, 68, 68, 0.8)';
@@ -524,12 +524,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   }
   
-  let data: any;
-  let options: any;
-  
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
-  options = {
+  const options = {
     ...baseOptions,
     responsive: true,
     maintainAspectRatio: false,
@@ -584,6 +581,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     },
   };
   
+  let data: any;
+  
   if (chartControls.chartType === 'line') {
     data = {
       labels,
@@ -605,19 +604,18 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       labels,
       datasets: [
         {
+          type: 'candlestick' as ChartType,
           label: 'Price',
-          data: chartData.map((d, i) => ({
-            x: i,
+          data: chartData.map((d) => ({
             o: d.open,
             h: d.high,
             l: d.low,
             c: d.close
           })),
-          backgroundColor: (ctx: any) => {
-            if (!ctx.raw) return 'rgba(75, 192, 192, 0.1)';
-            return ctx.raw.o > ctx.raw.c 
-              ? 'rgba(239, 68, 68, 0.5)'
-              : 'rgba(16, 185, 129, 0.5)';
+          color: {
+            up: 'rgba(16, 185, 129, 1)',
+            down: 'rgba(239, 68, 68, 1)',
+            unchanged: 'rgba(155, 155, 155, 1)',
           },
           borderColor: (ctx: any) => {
             if (!ctx.raw) return 'rgba(75, 192, 192, 1)';
@@ -625,23 +623,25 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               ? 'rgba(239, 68, 68, 1)'
               : 'rgba(16, 185, 129, 1)';
           },
-          borderWidth: 2
+          backgroundColor: (ctx: any) => {
+            if (!ctx.raw) return 'rgba(75, 192, 192, 0.1)';
+            return ctx.raw.o > ctx.raw.c 
+              ? 'rgba(239, 68, 68, 0.5)'
+              : 'rgba(16, 185, 129, 0.5)';
+          }
         }
       ]
     };
     
-    options = {
-      ...options,
-      scales: {
-        ...options.scales,
-        x: {
-          ...options.scales.x,
-          ticks: {
-            ...options.scales.x.ticks,
-            callback: function(val: any) {
-              const index = typeof val === 'number' ? val : parseInt(val);
-              return index % Math.ceil(labels.length / 10) === 0 ? labels[index] : '';
-            }
+    options.scales = {
+      ...options.scales,
+      x: {
+        ...options.scales.x,
+        ticks: {
+          ...options.scales.x.ticks,
+          callback: function(val: any) {
+            const index = typeof val === 'number' ? val : parseInt(val);
+            return index % Math.ceil(labels.length / 10) === 0 ? labels[index] : '';
           }
         }
       }
@@ -681,16 +681,29 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
             Reset Zoom
           </button>
         </div>
-        <Line
-          data={data}
-          options={options}
-          height={320}
-          ref={(ref) => {
-            if (ref) {
-              chartRef.current = ref;
-            }
-          }}
-        />
+        {chartControls.chartType === 'line' ? (
+          <Line
+            data={data}
+            options={options}
+            height={320}
+            ref={(ref) => {
+              if (ref) {
+                chartRef.current = ref;
+              }
+            }}
+          />
+        ) : (
+          <Line
+            data={data}
+            options={options}
+            height={320}
+            ref={(ref) => {
+              if (ref) {
+                chartRef.current = ref;
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );
