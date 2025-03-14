@@ -390,7 +390,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   }
   
-  if (chartControls.showPatterns) {
+  if (chartControls.showPatterns && chartControls.patternControls) {
     if (patterns.headAndShoulders && chartControls.patternControls.showHeadAndShoulders) {
       patterns.headAndShoulders.forEach((index, i) => {
         annotations[`handS${i}`] = {
@@ -550,8 +550,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           mode: 'xy' as const,
         },
         limits: {
-          x: {min: 'original', max: 'original', minRange: 10},
-          y: {min: 'original', max: 'original', minRange: 10}
+          x: {min: 'original' as 'original', max: 'original' as 'original', minRange: 10},
+          y: {min: 'original' as 'original', max: 'original' as 'original', minRange: 10}
         }
       },
       tooltip: {
@@ -700,7 +700,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           height={320}
           ref={(ref) => {
             if (ref) {
-              chartRef.current = ref.current;
+              chartRef.current = ref;
             }
           }}
         />
