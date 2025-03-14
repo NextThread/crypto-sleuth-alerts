@@ -133,7 +133,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   };
   
   useEffect(() => {
-    // Update chart when controls change
     if (chartRef.current?.chartInstance) {
       chartRef.current.chartInstance.update();
     }
@@ -189,7 +188,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   const annotations: any = {};
   
-  // Add support and resistance lines
   if (chartControls.showSupportResistance) {
     supports.slice(0, 3).forEach((level, i) => {
       annotations[`support${i}`] = {
@@ -234,7 +232,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  // Add fibonacci levels
   if (chartControls.showFibonacciLevels) {
     fibLevels.forEach((level, i) => {
       const fibPercents = [0, 23.6, 38.2, 50, 61.8, 78.6, 100];
@@ -258,7 +255,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  // Add trend lines
   if (chartControls.showTrendLines) {
     uptrend.forEach((trend, i) => {
       const startValue = chartData[trend.start].low;
@@ -313,9 +309,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  // Add entry/exit points near the latest candle for better visibility
   if (chartControls.showEntryExitPoints) {
-    // Show only the most recent entry point near the last candle
     const lastEntryPoint = entryPoints.length > 0 ? entryPoints[entryPoints.length - 1] : null;
     if (lastEntryPoint !== null) {
       annotations[`entry`] = {
@@ -339,7 +333,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       };
     }
     
-    // Show only the most recent exit point near the last candle
     const lastExitPoint = exitPoints.length > 0 ? exitPoints[exitPoints.length - 1] : null;
     if (lastExitPoint !== null) {
       annotations[`exit`] = {
@@ -361,7 +354,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       };
     }
     
-    // Add stop loss and take profit lines with improved positioning
     if (stopLoss > 0) {
       annotations['stopLoss'] = {
         type: 'line',
@@ -390,7 +382,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         label: {
           display: true,
           content: 'Take Profit',
-          position: 'end',  // Position at the end for better separation from stop loss
+          position: 'end',
           backgroundColor: '#0EA5E9',
           color: '#fff',
           font: {
@@ -403,14 +395,11 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   }
   
-  // Pattern detection with filtered display by pattern type
   if (chartControls.showPatterns && chartControls.patternControls) {
     const patternControls = chartControls.patternControls;
     
-    // Add patterns with padding for better visibility and prevention of overlap
     let currentPatternBoxes: { startIdx: number, endIdx: number, yMin: number, yMax: number }[] = [];
     
-    // Head and Shoulders Pattern
     if (patternControls.showHeadAndShoulders && patterns.headAndShoulders) {
       patterns.headAndShoulders.forEach((index, i) => {
         const startIdx = Math.max(0, index - 10);
@@ -418,7 +407,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         const yMin = chartData[index].low * 0.99;
         const yMax = chartData[index].high * 1.01;
         
-        // Check if this pattern overlaps with any existing pattern
         const overlap = currentPatternBoxes.some(box => 
           (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
           (yMin <= box.yMax && yMax >= box.yMin)
@@ -451,7 +439,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    // Double Top Pattern
     if (patternControls.showDoubleTop && patterns.doubleTop) {
       patterns.doubleTop.forEach((index, i) => {
         const startIdx = Math.max(0, index - 8);
@@ -459,7 +446,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         const yMin = chartData[index].low * 0.99;
         const yMax = chartData[index].high * 1.01;
         
-        // Check for overlap
         const overlap = currentPatternBoxes.some(box => 
           (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
           (yMin <= box.yMax && yMax >= box.yMin)
@@ -492,7 +478,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    // Double Bottom Pattern
     if (patternControls.showDoubleBottom && patterns.doubleBottom) {
       patterns.doubleBottom.forEach((index, i) => {
         const startIdx = Math.max(0, index - 8);
@@ -500,7 +485,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         const yMin = chartData[index].low * 0.99;
         const yMax = chartData[index].high * 1.01;
         
-        // Check for overlap
         const overlap = currentPatternBoxes.some(box => 
           (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
           (yMin <= box.yMax && yMax >= box.yMin)
@@ -533,7 +517,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    // Triangle Pattern
     if (patternControls.showTriangle && patterns.triangle) {
       patterns.triangle.forEach((triangle, i) => {
         const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : 
@@ -545,7 +528,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         const yMin = Math.min(...chartData.slice(startIdx, endIdx + 1).map(d => d.low)) * 0.99;
         const yMax = Math.max(...chartData.slice(startIdx, endIdx + 1).map(d => d.high)) * 1.01;
         
-        // Check for overlap
         const overlap = currentPatternBoxes.some(box => 
           (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
           (yMin <= box.yMax && yMax >= box.yMin)
@@ -578,7 +560,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    // Wedge Pattern
     if (patternControls.showWedge && patterns.wedge) {
       patterns.wedge.forEach((wedge, i) => {
         const color = wedge.type === 'rising' ? 'rgba(16, 185, 129, 0.8)' : 
@@ -589,7 +570,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         const yMin = Math.min(...chartData.slice(startIdx, endIdx + 1).map(d => d.low)) * 0.99;
         const yMax = Math.max(...chartData.slice(startIdx, endIdx + 1).map(d => d.high)) * 1.01;
         
-        // Check for overlap
         const overlap = currentPatternBoxes.some(box => 
           (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
           (yMin <= box.yMax && yMax >= box.yMin)
@@ -625,7 +605,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
-  // Setup chart options with improved zoom and scroll
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -637,7 +616,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         pan: {
           enabled: true,
           mode: 'xy' as const,
-          modifierKey: 'shift' as const, // Hold shift key to pan
+          modifierKey: 'shift' as const,
         },
         zoom: {
           wheel: {
@@ -663,7 +642,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       tooltip: {
         ...baseOptions.plugins.tooltip,
         callbacks: {
-          ...baseOptions.plugins.tooltip.callbacks,
           label: (context: any) => {
             const index = context.dataIndex;
             const dataPoint = chartData[index];
@@ -728,7 +706,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   };
   
-  // Define chart data based on chart type
   let data: any;
   
   if (chartControls.chartType === 'line') {
@@ -748,11 +725,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       ],
     };
   } else {
-    // Candlestick chart implementation
-    // For candlestick type, we'll use a modified line chart to show OHLC data
-    // since we're having issues with the actual candlestick controller
-    
-    // Create a volume dataset
     const volumeDataset = {
       label: 'Volume',
       data: volumes,
@@ -767,7 +739,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       barPercentage: 0.3,
     };
     
-    // Create a price dataset
     const priceDataset = {
       label: 'OHLC',
       data: closes,
@@ -784,7 +755,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       datasets: [volumeDataset, priceDataset],
     };
     
-    // Modify the scales to include the volume axis
     options.scales = {
       ...options.scales,
       y1: {
@@ -809,7 +779,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       </div>
       
-      {/* AI Analysis with tooltips for more details */}
       <TooltipProvider>
         <div className="mb-4 p-2 bg-black/10 rounded text-xs">
           <p className="font-medium mb-1">AI Analysis:</p>
@@ -855,24 +824,39 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       </TooltipProvider>
       
       <div className="h-[320px] relative">
-        {/* Chart controls */}
-        <div className="absolute right-2 top-2 z-10 flex space-x-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
-                  onClick={() => {
-                    if (chartRef.current) {
-                      if (chartRef.current.chartInstance) {
-                        chartRef.current.chartInstance.resetZoom();
-                      } else if (chartRef.current.current) {
-                        chartRef.current.current.resetZoom();
-                      }
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
+                onClick={() => {
+                  if (chartRef.current) {
+                    if (chartRef.current.chartInstance) {
+                      chartRef.current.chartInstance.resetZoom();
+                    } else if (chartRef.current.current) {
+                      chartRef.current.current.resetZoom();
                     }
-                  }}
-                >
-                  Reset Zoom
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-black/8
+                  }
+                }}
+              >
+                Reset Zoom
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-black/80 text-white p-2">
+              <p>Reset chart zoom and pan to default view</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Line
+          data={data}
+          options={options}
+          height={320}
+          ref={chartRef}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default CryptoChart;
