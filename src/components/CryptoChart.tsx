@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -15,8 +14,8 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { ChartControlsState } from './ChartControls';
 import { useToast } from '@/hooks/use-toast';
+import 'chart.js/auto';
 
-// Register Chart.js components
 Chart.register(...registerables, annotationPlugin, zoomPlugin);
 
 interface CryptoChartProps {
@@ -32,13 +31,12 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const chartRef = useRef<Chart | null>(null);
   const { toast } = useToast();
   
-  // AI-based analysis results
   const [aiAnalysis, setAiAnalysis] = useState({
     entryPointExplanation: '',
     targetExplanation: '',
     stopLossExplanation: ''
   });
-  
+
   useEffect(() => {
     const fetchData = async () => {
       if (!symbol) return;
@@ -50,7 +48,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         const data = await getKlineData(symbol, interval);
         setChartData(data);
         
-        // Perform AI analysis after data is fetched (simulated)
         performAiAnalysis(data);
       } catch (err) {
         console.error('Error fetching chart data:', err);
@@ -62,7 +59,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     
     fetchData();
     
-    // Set up websocket for real-time updates
     const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
     const ws = new WebSocket(wsEndpoint);
     
@@ -71,7 +67,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       if (message.k) {
         const { t: openTime, o: open, h: high, l: low, c: close, v: volume, T: closeTime, n: numberOfTrades } = message.k;
         
-        // Update last candle if it exists, or add a new one
         setChartData(prev => {
           const newData = [...prev];
           const lastIndex = newData.findIndex(candle => candle.openTime === openTime);
@@ -85,7 +80,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               close: parseFloat(close),
               volume: parseFloat(volume),
               closeTime,
-              quoteAssetVolume: 0, // Not provided in the websocket
+              quoteAssetVolume: 0,
               numberOfTrades,
             };
           } else if (newData.length > 0 && openTime > newData[newData.length - 1].openTime) {
@@ -100,7 +95,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               quoteAssetVolume: 0,
               numberOfTrades,
             });
-            // Keep only the last 500 candles
             if (newData.length > 500) {
               newData.shift();
             }
@@ -116,24 +110,19 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     };
   }, [symbol, interval]);
   
-  // AI-based analysis (simulated)
   const performAiAnalysis = (data: KlineData[]) => {
     if (data.length < 30) return;
     
-    // These would normally come from a real AI service
-    // but for demonstration we'll generate them from the data
     const { entryPoints, exitPoints, stopLoss, takeProfit } = identifyEntryExitPoints(data);
     const { supports, resistances } = calculateSupportResistance(data);
     const trend = data[data.length - 1].close > data[data.length - 10].close ? 'bullish' : 'bearish';
     
-    // Simple explanations
     setAiAnalysis({
       entryPointExplanation: `Based on ${trend} trend and RSI indicators crossing below 30, suggesting oversold conditions.`,
       targetExplanation: `Target set near historical resistance at ${takeProfit.toFixed(2)} where profit taking is likely to occur.`,
       stopLossExplanation: `Stop loss placed below recent support at ${stopLoss.toFixed(2)} to limit downside risk while giving price room to fluctuate.`
     });
     
-    // Show AI recommendation as toast
     toast({
       title: "AI Analysis Complete",
       description: `Recommended action: ${trend === 'bullish' ? 'Consider entry positions as market shows bullish pattern' : 'Exercise caution as market shows bearish signals'}`,
@@ -141,7 +130,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   };
   
-  // Update chart when controls change
   useEffect(() => {
     if (chartRef.current) {
       chartRef.current.update();
@@ -183,29 +171,25 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     );
   }
   
-  // Calculate technical indicators
   const { supports, resistances } = calculateSupportResistance(chartData);
   const { entryPoints, exitPoints, stopLoss, takeProfit } = identifyEntryExitPoints(chartData);
   const fibLevels = calculateFibonacciLevels(chartData);
   const { uptrend, downtrend } = detectTrendLines(chartData);
   const patterns = detectPatterns(chartData);
   
-  // Prepare data for the chart
   const labels = chartData.map(d => formatTimeLabel(d.openTime, interval));
   const closes = chartData.map(d => d.close);
   const opens = chartData.map(d => d.open);
   const highs = chartData.map(d => d.high);
   const lows = chartData.map(d => d.low);
   
-  // Add annotations for technical analysis
   const annotations: any = {};
   
-  // Add support levels (if control is enabled)
   if (chartControls.showSupportResistance) {
     supports.slice(0, 3).forEach((level, i) => {
       annotations[`support${i}`] = {
         type: 'line',
-        borderColor: 'rgba(52, 211, 153, 0.7)', // Green
+        borderColor: 'rgba(52, 211, 153, 0.7)',
         borderWidth: 2,
         borderDash: [5, 5],
         label: {
@@ -223,11 +207,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       };
     });
     
-    // Add resistance levels
     resistances.slice(0, 3).forEach((level, i) => {
       annotations[`resistance${i}`] = {
         type: 'line',
-        borderColor: 'rgba(239, 68, 68, 0.7)', // Red
+        borderColor: 'rgba(239, 68, 68, 0.7)',
         borderWidth: 2,
         borderDash: [5, 5],
         label: {
@@ -246,16 +229,15 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  // Add Fibonacci retracement levels (if control is enabled)
   if (chartControls.showFibonacciLevels) {
     fibLevels.forEach((level, i) => {
       const fibPercents = [0, 23.6, 38.2, 50, 61.8, 78.6, 100];
       annotations[`fib${i}`] = {
         type: 'line',
-        borderColor: 'rgba(139, 92, 246, 0.5)', // Purple
+        borderColor: 'rgba(139, 92, 246, 0.5)',
         borderWidth: 1,
         label: {
-          display: i % 2 === 0, // Only show labels for every other level to avoid crowding
+          display: i % 2 === 0,
           content: `Fib ${fibPercents[i]}%`,
           position: 'start',
           backgroundColor: 'rgba(139, 92, 246, 0.5)',
@@ -270,7 +252,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  // Add trend lines (if control is enabled)
   if (chartControls.showTrendLines) {
     uptrend.forEach((trend, i) => {
       const startValue = chartData[trend.start].low;
@@ -280,10 +261,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         yMin: startValue,
         xMax: labels[trend.end],
         yMax: startValue + trend.slope * (trend.end - trend.start),
-        borderColor: 'rgba(16, 185, 129, 0.7)', // Green
+        borderColor: 'rgba(16, 185, 129, 0.7)',
         borderWidth: 2,
         label: {
-          display: i === 0, // Only show label for the first trend line
+          display: i === 0,
           content: 'Uptrend',
           position: {
             x: 'start',
@@ -306,10 +287,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         yMin: startValue,
         xMax: labels[trend.end],
         yMax: startValue + trend.slope * (trend.end - trend.start),
-        borderColor: 'rgba(239, 68, 68, 0.7)', // Red
+        borderColor: 'rgba(239, 68, 68, 0.7)',
         borderWidth: 2,
         label: {
-          display: i === 0, // Only show label for the first trend line
+          display: i === 0,
           content: 'Downtrend',
           position: {
             x: 'start',
@@ -325,15 +306,13 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     });
   }
   
-  // Add entry/exit points (if control is enabled)
   if (chartControls.showEntryExitPoints) {
-    // Add entry points with green markers
     entryPoints.slice(-3).forEach((point, i) => {
       annotations[`entry${i}`] = {
         type: 'point',
         xValue: labels[point],
         yValue: chartData[point].close,
-        backgroundColor: '#F2FCE2', // Soft Green
+        backgroundColor: '#F2FCE2',
         borderColor: 'rgba(16, 185, 129, 0.8)',
         borderWidth: 2,
         radius: 5,
@@ -350,13 +329,12 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       };
     });
     
-    // Add exit points with blue markers
     exitPoints.slice(-3).forEach((point, i) => {
       annotations[`exit${i}`] = {
         type: 'point',
         xValue: labels[point],
         yValue: chartData[point].close,
-        backgroundColor: '#0EA5E9', // Ocean Blue
+        backgroundColor: '#0EA5E9',
         radius: 5,
         label: {
           display: true,
@@ -371,11 +349,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       };
     });
     
-    // Add stop-loss level with red
     if (stopLoss > 0) {
       annotations['stopLoss'] = {
         type: 'line',
-        borderColor: '#ea384c', // Red
+        borderColor: '#ea384c',
         borderWidth: 2,
         label: {
           display: true,
@@ -392,11 +369,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       };
     }
     
-    // Add take-profit level with blue
     if (takeProfit > 0) {
       annotations['takeProfit'] = {
         type: 'line',
-        borderColor: '#0EA5E9', // Ocean Blue
+        borderColor: '#0EA5E9',
         borderWidth: 2,
         label: {
           display: true,
@@ -414,107 +390,199 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   }
   
-  // Add chart pattern annotations (if control is enabled)
   if (chartControls.showPatterns) {
-    patterns.headAndShoulders.forEach((index, i) => {
-      annotations[`handS${i}`] = {
-        type: 'box',
-        xMin: labels[Math.max(0, index - 10)],
-        xMax: labels[Math.min(chartData.length - 1, index + 10)],
-        yMin: chartData[index].low * 0.99,
-        yMax: chartData[index].high * 1.01,
-        backgroundColor: 'rgba(244, 114, 182, 0.2)', // Pink
-        borderColor: 'rgba(244, 114, 182, 0.8)',
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: 'H&S Pattern',
-          position: 'center',
-          backgroundColor: 'rgba(244, 114, 182, 0.8)',
-          color: '#fff',
-          font: {
-            size: 10,
+    if (patterns && patterns.headAndShoulders && chartControls.patternControls.showHeadAndShoulders) {
+      patterns.headAndShoulders.forEach((index, i) => {
+        annotations[`handS${i}`] = {
+          type: 'box',
+          xMin: labels[Math.max(0, index - 10)],
+          xMax: labels[Math.min(chartData.length - 1, index + 10)],
+          yMin: chartData[index].low * 0.99,
+          yMax: chartData[index].high * 1.01,
+          backgroundColor: 'rgba(244, 114, 182, 0.2)',
+          borderColor: 'rgba(244, 114, 182, 0.8)',
+          borderWidth: 2,
+          label: {
+            display: true,
+            content: 'H&S Pattern',
+            position: 'center',
+            backgroundColor: 'rgba(244, 114, 182, 0.8)',
+            color: '#fff',
+            font: {
+              size: 10,
+            },
           },
-        },
-      };
-    });
+        };
+      });
+    }
     
-    patterns.doubleTop.forEach((index, i) => {
-      annotations[`doubleTop${i}`] = {
-        type: 'box',
-        xMin: labels[Math.max(0, index - 8)],
-        xMax: labels[Math.min(chartData.length - 1, index + 8)],
-        yMin: chartData[index].low * 0.99,
-        yMax: chartData[index].high * 1.01,
-        backgroundColor: 'rgba(249, 115, 22, 0.2)', // Orange
-        borderColor: 'rgba(249, 115, 22, 0.8)',
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: 'Double Top',
-          position: 'center',
-          backgroundColor: 'rgba(249, 115, 22, 0.8)',
-          color: '#fff',
-          font: {
-            size: 10,
+    if (patterns && patterns.doubleTop && chartControls.patternControls.showDoubleTop) {
+      patterns.doubleTop.forEach((index, i) => {
+        annotations[`doubleTop${i}`] = {
+          type: 'box',
+          xMin: labels[Math.max(0, index - 8)],
+          xMax: labels[Math.min(chartData.length - 1, index + 8)],
+          yMin: chartData[index].low * 0.99,
+          yMax: chartData[index].high * 1.01,
+          backgroundColor: 'rgba(249, 115, 22, 0.2)',
+          borderColor: 'rgba(249, 115, 22, 0.8)',
+          borderWidth: 2,
+          label: {
+            display: true,
+            content: 'Double Top',
+            position: 'center',
+            backgroundColor: 'rgba(249, 115, 22, 0.8)',
+            color: '#fff',
+            font: {
+              size: 10,
+            },
           },
-        },
-      };
-    });
+        };
+      });
+    }
     
-    patterns.doubleBottom.forEach((index, i) => {
-      annotations[`doubleBottom${i}`] = {
-        type: 'box',
-        xMin: labels[Math.max(0, index - 8)],
-        xMax: labels[Math.min(chartData.length - 1, index + 8)],
-        yMin: chartData[index].low * 0.99,
-        yMax: chartData[index].high * 1.01,
-        backgroundColor: 'rgba(16, 185, 129, 0.2)', // Green
-        borderColor: 'rgba(16, 185, 129, 0.8)',
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: 'Double Bottom',
-          position: 'center',
-          backgroundColor: 'rgba(16, 185, 129, 0.8)',
-          color: '#fff',
-          font: {
-            size: 10,
+    if (patterns && patterns.doubleBottom && chartControls.patternControls.showDoubleBottom) {
+      patterns.doubleBottom.forEach((index, i) => {
+        annotations[`doubleBottom${i}`] = {
+          type: 'box',
+          xMin: labels[Math.max(0, index - 8)],
+          xMax: labels[Math.min(chartData.length - 1, index + 8)],
+          yMin: chartData[index].low * 0.99,
+          yMax: chartData[index].high * 1.01,
+          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+          borderColor: 'rgba(16, 185, 129, 0.8)',
+          borderWidth: 2,
+          label: {
+            display: true,
+            content: 'Double Bottom',
+            position: 'center',
+            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            color: '#fff',
+            font: {
+              size: 10,
+            },
           },
-        },
-      };
-    });
+        };
+      });
+    }
     
-    patterns.triangle.forEach((triangle, i) => {
-      const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : // Green
-                    triangle.type === 'descending' ? 'rgba(239, 68, 68, 0.8)' : // Red
-                    'rgba(59, 130, 246, 0.8)'; // Blue for symmetrical
-      
-      annotations[`triangle${i}`] = {
-        type: 'box',
-        xMin: labels[triangle.start],
-        xMax: labels[triangle.end],
-        yMin: Math.min(...chartData.slice(triangle.start, triangle.end + 1).map(d => d.low)) * 0.99,
-        yMax: Math.max(...chartData.slice(triangle.start, triangle.end + 1).map(d => d.high)) * 1.01,
-        backgroundColor: color.replace('0.8', '0.2'),
-        borderColor: color,
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: `${triangle.type.charAt(0).toUpperCase() + triangle.type.slice(1)} Triangle`,
-          position: 'center',
-          backgroundColor: color,
-          color: '#fff',
-          font: {
-            size: 10,
+    if (patterns && patterns.triangle && chartControls.patternControls.showTriangle) {
+      patterns.triangle.forEach((triangle, i) => {
+        const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : 
+                      triangle.type === 'descending' ? 'rgba(239, 68, 68, 0.8)' : 
+                      'rgba(59, 130, 246, 0.8)';
+        
+        annotations[`triangle${i}`] = {
+          type: 'box',
+          xMin: labels[triangle.start],
+          xMax: labels[triangle.end],
+          yMin: Math.min(...chartData.slice(triangle.start, triangle.end + 1).map(d => d.low)) * 0.99,
+          yMax: Math.max(...chartData.slice(triangle.start, triangle.end + 1).map(d => d.high)) * 1.01,
+          backgroundColor: color.replace('0.8', '0.2'),
+          borderColor: color,
+          borderWidth: 2,
+          label: {
+            display: true,
+            content: `${triangle.type.charAt(0).toUpperCase() + triangle.type.slice(1)} Triangle`,
+            position: 'center',
+            backgroundColor: color,
+            color: '#fff',
+            font: {
+              size: 10,
+            },
           },
-        },
-      };
-    });
+        };
+      });
+    }
+    
+    if (patterns && patterns.wedge && chartControls.patternControls.showWedge) {
+      patterns.wedge.forEach((wedge, i) => {
+        const color = wedge.type === 'rising' ? 'rgba(16, 185, 129, 0.8)' : 
+                      'rgba(239, 68, 68, 0.8)';
+        
+        annotations[`wedge${i}`] = {
+          type: 'box',
+          xMin: labels[wedge.start],
+          xMax: labels[wedge.end],
+          yMin: Math.min(...chartData.slice(wedge.start, wedge.end + 1).map(d => d.low)) * 0.99,
+          yMax: Math.max(...chartData.slice(wedge.start, wedge.end + 1).map(d => d.high)) * 1.01,
+          backgroundColor: color.replace('0.8', '0.2'),
+          borderColor: color,
+          borderWidth: 2,
+          label: {
+            display: true,
+            content: `${wedge.type.charAt(0).toUpperCase() + wedge.type.slice(1)} Wedge`,
+            position: 'center',
+            backgroundColor: color,
+            color: '#fff',
+            font: {
+              size: 10,
+            },
+          },
+        };
+      });
+    }
   }
   
-  // Prepare chart data based on selected chart type
   let data: any;
+  let options: any;
+  
+  const baseOptions = generateChartOptions(chartData, interval, 'dark');
+  
+  options = {
+    ...baseOptions,
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      ...baseOptions.plugins,
+      annotation: {
+        annotations,
+      },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'xy',
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'xy',
+        },
+        limits: {
+          x: {min: 'original', max: 'original', minRange: 10},
+          y: {min: 'original', max: 'original', minRange: 10}
+        }
+      },
+      tooltip: {
+        ...baseOptions.plugins.tooltip,
+        callbacks: {
+          ...baseOptions.plugins.tooltip.callbacks,
+          label: (context: any) => {
+            const index = context.dataIndex;
+            const dataPoint = chartData[index];
+            
+            if (!dataPoint) return '';
+            
+            if (chartControls.chartType === 'candlestick') {
+              return [
+                `Open: ${dataPoint.open.toFixed(2)}`,
+                `High: ${dataPoint.high.toFixed(2)}`,
+                `Low: ${dataPoint.low.toFixed(2)}`,
+                `Close: ${dataPoint.close.toFixed(2)}`,
+                `Volume: ${Math.round(dataPoint.volume)}`,
+              ];
+            } else {
+              return `Price: ${dataPoint.close.toFixed(2)}`;
+            }
+          },
+        },
+      },
+    },
+  };
   
   if (chartControls.chartType === 'line') {
     data = {
@@ -533,98 +601,55 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       ],
     };
   } else {
-    // Candlestick chart
     data = {
       labels,
       datasets: [
         {
           label: 'Price',
           data: chartData.map((d, i) => ({
-            x: labels[i],
+            x: i,
             o: d.open,
             h: d.high,
             l: d.low,
             c: d.close
           })),
-          borderColor: (ctx: any) => {
-            if (!ctx.raw) return 'rgba(75, 192, 192, 1)';
-            return ctx.raw.o > ctx.raw.c 
-              ? 'rgba(239, 68, 68, 1)' // red for bearish
-              : 'rgba(16, 185, 129, 1)'; // green for bullish
-          },
           backgroundColor: (ctx: any) => {
             if (!ctx.raw) return 'rgba(75, 192, 192, 0.1)';
             return ctx.raw.o > ctx.raw.c 
-              ? 'rgba(239, 68, 68, 0.1)' // red for bearish
-              : 'rgba(16, 185, 129, 0.1)'; // green for bullish
+              ? 'rgba(239, 68, 68, 0.5)'
+              : 'rgba(16, 185, 129, 0.5)';
+          },
+          borderColor: (ctx: any) => {
+            if (!ctx.raw) return 'rgba(75, 192, 192, 1)';
+            return ctx.raw.o > ctx.raw.c 
+              ? 'rgba(239, 68, 68, 1)'
+              : 'rgba(16, 185, 129, 1)';
           },
           borderWidth: 2
         }
       ]
     };
-  }
-  
-  const baseOptions = generateChartOptions(chartData, interval, 'dark');
-  
-  const options = {
-    ...baseOptions,
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      ...baseOptions.plugins,
-      annotation: {
-        annotations,
-      },
-      zoom: {
-        pan: {
-          enabled: true,
-          mode: 'x' as const,
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true
-          },
-          mode: 'x' as const,
-        },
-        limits: {
-          x: {min: 'original', max: 'original', minRange: 10}
-        }
-      },
-      tooltip: {
-        ...baseOptions.plugins.tooltip,
-        callbacks: {
-          ...baseOptions.plugins.tooltip.callbacks,
-          label: (context: any) => {
-            const index = context.dataIndex;
-            const dataPoint = chartData[index];
-            
-            if (chartControls.chartType === 'candlestick') {
-              return [
-                `Open: ${dataPoint.open.toFixed(2)}`,
-                `High: ${dataPoint.high.toFixed(2)}`,
-                `Low: ${dataPoint.low.toFixed(2)}`,
-                `Close: ${dataPoint.close.toFixed(2)}`,
-                `Volume: ${Math.round(dataPoint.volume)}`,
-              ];
-            } else {
-              return `Price: ${dataPoint.close.toFixed(2)}`;
+    
+    options = {
+      ...options,
+      scales: {
+        ...options.scales,
+        x: {
+          ...options.scales.x,
+          ticks: {
+            ...options.scales.x.ticks,
+            callback: function(val: any) {
+              const index = typeof val === 'number' ? val : parseInt(val);
+              return index % Math.ceil(labels.length / 10) === 0 ? labels[index] : '';
             }
-          },
-        },
-      },
-    },
-    parsing: chartControls.chartType === 'candlestick' ? {
-      xAxisKey: 'x',
-      yAxisKey: chartControls.chartType === 'candlestick' ? 'c' : 'y'
-    } : undefined,
-  };
+          }
+        }
+      }
+    };
+  }
   
   return (
     <div className="w-full h-[400px] glass-panel rounded-lg p-4">
-      {/* Chart Header */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{symbol} Chart</h3>
         <div className="text-xs font-mono text-muted-foreground">
@@ -632,7 +657,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       </div>
       
-      {/* AI Analysis Section */}
       {aiAnalysis.entryPointExplanation && (
         <div className="mb-4 p-2 bg-black/10 rounded text-xs">
           <p className="font-medium mb-1">AI Analysis:</p>
@@ -644,14 +668,12 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       )}
       
-      {/* The Chart */}
       <div className="h-[320px] relative">
         <div className="absolute right-2 top-2 z-10 flex space-x-1">
           <button 
             className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
             onClick={() => {
               if (chartRef.current) {
-                // @ts-ignore - resetZoom is available but not in types
                 chartRef.current.resetZoom();
               }
             }}
@@ -661,9 +683,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
         <Line
           data={data}
-          options={options as any}
+          options={options}
           height={320}
-          //@ts-ignore
           ref={chartRef}
         />
       </div>
@@ -672,3 +693,4 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
 };
 
 export default CryptoChart;
+

@@ -30,7 +30,8 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
     doubleTop: number;
     doubleBottom: number;
     triangle: number;
-  }>({ headAndShoulders: 0, doubleTop: 0, doubleBottom: 0, triangle: 0 });
+    wedge: number;
+  }>({ headAndShoulders: 0, doubleTop: 0, doubleBottom: 0, triangle: 0, wedge: 0 });
   
   useEffect(() => {
     const fetchData = async () => {
@@ -71,12 +72,16 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         
         // Get patterns
         const patterns = detectPatterns(klineData);
-        setPatternCount({
-          headAndShoulders: patterns.headAndShoulders.length,
-          doubleTop: patterns.doubleTop.length,
-          doubleBottom: patterns.doubleBottom.length,
-          triangle: patterns.triangle.length
-        });
+        // Ensure patterns exists before accessing properties
+        if (patterns) {
+          setPatternCount({
+            headAndShoulders: patterns.headAndShoulders ? patterns.headAndShoulders.length : 0,
+            doubleTop: patterns.doubleTop ? patterns.doubleTop.length : 0,
+            doubleBottom: patterns.doubleBottom ? patterns.doubleBottom.length : 0,
+            triangle: patterns.triangle ? patterns.triangle.length : 0,
+            wedge: patterns.wedge ? patterns.wedge.length : 0
+          });
+        }
       } catch (err) {
         console.error('Error fetching technical analysis data:', err);
         setError('Failed to load analysis. Please try again.');
@@ -121,7 +126,7 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   
   // Get pattern evaluation
   const getPatternEvaluation = () => {
-    const { headAndShoulders, doubleTop, doubleBottom, triangle } = patternCount;
+    const { headAndShoulders, doubleTop, doubleBottom, triangle, wedge } = patternCount;
     
     // Count bearish vs bullish patterns
     const bearishPatterns = headAndShoulders + doubleTop;
@@ -137,10 +142,10 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         evaluation: 'bullish',
         description: `${bullishPatterns} bullish pattern${bullishPatterns !== 1 ? 's' : ''} detected`
       };
-    } else if (triangle > 0) {
+    } else if (triangle > 0 || wedge > 0) {
       return {
         evaluation: 'neutral',
-        description: `${triangle} triangle pattern${triangle !== 1 ? 's' : ''} detected`
+        description: `${triangle + wedge} continuation pattern${(triangle + wedge) !== 1 ? 's' : ''} detected`
       };
     } else {
       return {
@@ -254,7 +259,7 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
       
       {/* Pattern Summary */}
       {(patternCount.headAndShoulders > 0 || patternCount.doubleTop > 0 || 
-        patternCount.doubleBottom > 0 || patternCount.triangle > 0) && (
+        patternCount.doubleBottom > 0 || patternCount.triangle > 0 || patternCount.wedge > 0) && (
         <div className="mb-6 p-3 bg-secondary/30 rounded-md">
           <h4 className="text-sm font-medium mb-2">Patterns Detected:</h4>
           <ul className="text-xs space-y-1.5">
@@ -282,11 +287,17 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
                 <span className="text-crypto-neutral">{patternCount.triangle} (Neutral)</span>
               </li>
             )}
+            {patternCount.wedge > 0 && (
+              <li className="flex justify-between">
+                <span className="text-muted-foreground">Wedge:</span>
+                <span className="text-crypto-neutral">{patternCount.wedge} (Neutral)</span>
+              </li>
+            )}
           </ul>
         </div>
       )}
       
-      {/* Price Target */}
+      {/* Price Target - Moved to bottom using mt-auto */}
       <div className="mt-auto pt-6 border-t border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
