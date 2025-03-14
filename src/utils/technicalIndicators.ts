@@ -372,13 +372,15 @@ export const detectPatterns = (
   headAndShoulders: number[], 
   doubleTop: number[], 
   doubleBottom: number[],
-  triangle: { start: number, end: number, type: 'ascending' | 'descending' | 'symmetrical' }[] 
+  triangle: { start: number, end: number, type: 'ascending' | 'descending' | 'symmetrical' }[],
+  wedge: { start: number, end: number, type: 'rising' | 'falling' }[]
 } => {
   const result = {
     headAndShoulders: [] as number[],
     doubleTop: [] as number[],
     doubleBottom: [] as number[],
-    triangle: [] as { start: number, end: number, type: 'ascending' | 'descending' | 'symmetrical' }[]
+    triangle: [] as { start: number, end: number, type: 'ascending' | 'descending' | 'symmetrical' }[],
+    wedge: [] as { start: number, end: number, type: 'rising' | 'falling' }[]
   };
   
   if (data.length < 100) return result;
@@ -487,6 +489,36 @@ export const detectPatterns = (
     }
   }
   
+  // Detect Wedges
+  for (let i = 0; i < data.length - 30; i++) {
+    const windowData = data.slice(i, i + 30);
+    
+    // Get highs and lows of the window
+    const highs = windowData.map(d => d.high);
+    const lows = windowData.map(d => d.low);
+    
+    // Simple linear regression on highs and lows
+    const highTrend = calculateTrendSlope(highs);
+    const lowTrend = calculateTrendSlope(lows);
+    
+    // Detect wedge type
+    if (highTrend < -0.001 && lowTrend < -0.001 && Math.abs(highTrend) > Math.abs(lowTrend)) {
+      // Falling wedge (bullish)
+      result.wedge.push({
+        start: i,
+        end: i + 30,
+        type: 'falling'
+      });
+    } else if (highTrend > 0.001 && lowTrend > 0.001 && Math.abs(highTrend) < Math.abs(lowTrend)) {
+      // Rising wedge (bearish)
+      result.wedge.push({
+        start: i,
+        end: i + 30,
+        type: 'rising'
+      });
+    }
+  }
+  
   return result;
 };
 
@@ -512,4 +544,3 @@ const calculateTrendSlope = (values: number[]): number => {
   
   return denominator !== 0 ? numerator / denominator : 0;
 };
-

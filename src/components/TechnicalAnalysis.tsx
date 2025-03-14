@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { 
@@ -20,7 +19,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Technical indicators
   const [rsi, setRsi] = useState<number | null>(null);
   const [macd, setMacd] = useState<{ value: number; signal: number } | null>(null);
   const [trend, setTrend] = useState<'bullish' | 'bearish' | 'neutral'>('neutral');
@@ -44,7 +42,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         const klineData = await getKlineData(symbol, interval);
         setData(klineData);
         
-        // Calculate technical indicators
         const rsiValues = calculateRSI(klineData);
         setRsi(rsiValues[rsiValues.length - 1]);
         
@@ -56,8 +53,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         
         setTrend(calculateTrendDirection(klineData));
         
-        // Calculate risk-reward ratio
-        // Simple example: Distance to nearest support vs resistance
         const currentPrice = klineData[klineData.length - 1].close;
         const recentLows = klineData.slice(-20).map(d => d.low);
         const recentHighs = klineData.slice(-20).map(d => d.high);
@@ -70,9 +65,7 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
           setRiskReward(reward / risk);
         }
         
-        // Get patterns
         const patterns = detectPatterns(klineData);
-        // Ensure patterns exists before accessing properties
         if (patterns) {
           setPatternCount({
             headAndShoulders: patterns.headAndShoulders ? patterns.headAndShoulders.length : 0,
@@ -92,27 +85,23 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
     
     fetchData();
     
-    // Update data periodically
-    const updateInterval = setInterval(fetchData, 60000); // Update every minute
+    const updateInterval = setInterval(fetchData, 60000);
     
     return () => clearInterval(updateInterval);
   }, [symbol, interval]);
   
-  // Helper function to get RSI class
   const getRsiClass = () => {
     if (rsi === null) return 'text-muted-foreground';
-    if (rsi >= 70) return 'text-crypto-bearish'; // Overbought
-    if (rsi <= 30) return 'text-crypto-bullish'; // Oversold
+    if (rsi >= 70) return 'text-crypto-bearish';
+    if (rsi <= 30) return 'text-crypto-bullish';
     return 'text-muted-foreground';
   };
   
-  // Helper function to get MACD class
   const getMacdClass = () => {
     if (!macd) return 'text-muted-foreground';
     return macd.value > macd.signal ? 'text-crypto-bullish' : 'text-crypto-bearish';
   };
   
-  // Helper function to get trend icon
   const getTrendIcon = () => {
     switch (trend) {
       case 'bullish':
@@ -124,11 +113,9 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
     }
   };
   
-  // Get pattern evaluation
   const getPatternEvaluation = () => {
     const { headAndShoulders, doubleTop, doubleBottom, triangle, wedge } = patternCount;
     
-    // Count bearish vs bullish patterns
     const bearishPatterns = headAndShoulders + doubleTop;
     const bullishPatterns = doubleBottom;
     
@@ -187,7 +174,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
     <div className="glass-card rounded-lg p-6 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-4">Technical Analysis</h3>
       
-      {/* Overall Trend */}
       <div className="flex items-center justify-between mb-6">
         <span className="text-muted-foreground flex items-center gap-2">
           <Activity className="w-4 h-4" />
@@ -201,7 +187,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         </div>
       </div>
       
-      {/* Pattern Detection */}
       <div className="flex items-center justify-between mb-6">
         <span className="text-muted-foreground flex items-center gap-2">
           <BarChart2 className="w-4 h-4" />
@@ -218,7 +203,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         </div>
       </div>
       
-      {/* RSI */}
       <div className="flex items-center justify-between mb-6">
         <span className="text-muted-foreground">RSI</span>
         <div className="flex items-center space-x-2">
@@ -231,7 +215,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         </div>
       </div>
       
-      {/* MACD */}
       <div className="flex items-center justify-between mb-6">
         <span className="text-muted-foreground">MACD</span>
         <div className="flex items-center space-x-2">
@@ -244,7 +227,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         </div>
       </div>
       
-      {/* Risk/Reward Ratio */}
       <div className="flex items-center justify-between mb-6">
         <span className="text-muted-foreground">Risk/Reward</span>
         <div className="flex items-center space-x-2">
@@ -257,7 +239,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         </div>
       </div>
       
-      {/* Pattern Summary */}
       {(patternCount.headAndShoulders > 0 || patternCount.doubleTop > 0 || 
         patternCount.doubleBottom > 0 || patternCount.triangle > 0 || patternCount.wedge > 0) && (
         <div className="mb-6 p-3 bg-secondary/30 rounded-md">
@@ -297,7 +278,6 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
         </div>
       )}
       
-      {/* Price Target - Moved to bottom using mt-auto */}
       <div className="mt-auto pt-6 border-t border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">

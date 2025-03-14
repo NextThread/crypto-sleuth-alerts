@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Chart, registerables } from 'chart.js';
+import { Chart, registerables, ChartType } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { formatTimeLabel, generateChartOptions } from '../utils/chartUtils';
@@ -685,7 +685,11 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           data={data}
           options={options}
           height={320}
-          ref={chartRef}
+          ref={(ref) => {
+            if (ref) {
+              chartRef.current = ref;
+            }
+          }}
         />
       </div>
     </div>
@@ -693,4 +697,3 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
 };
 
 export default CryptoChart;
-
