@@ -40,7 +40,7 @@ export interface ChartControlsState {
   showFibonacciLevels: boolean;
   showTrendLines: boolean;
   chartType: 'line' | 'candlestick';
-  patternControls: PatternControlsState;
+  patternControls?: PatternControlsState;
 }
 
 // Default controls that will be used if no localStorage data is found
@@ -50,14 +50,7 @@ const defaultControls: ChartControlsState = {
   showPatterns: true,
   showFibonacciLevels: true,
   showTrendLines: true,
-  chartType: 'line',
-  patternControls: {
-    showHeadAndShoulders: true,
-    showDoubleTop: true,
-    showDoubleBottom: true,
-    showTriangle: true,
-    showWedge: true
-  }
+  chartType: 'line'
 };
 
 const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
@@ -66,9 +59,6 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
     const savedControls = localStorage.getItem('chartControls');
     return savedControls ? JSON.parse(savedControls) : defaultControls;
   });
-  
-  // State to track expanded sections
-  const [expandedPatterns, setExpandedPatterns] = useState(false);
 
   // Handle control changes and save to localStorage
   const handleControlChange = (key: keyof ChartControlsState, value: any) => {
@@ -78,23 +68,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
     onControlsChange(newControls);
   };
 
-  // Handle pattern control changes
-  const handlePatternControlChange = (key: keyof PatternControlsState, value: boolean) => {
-    const newPatternControls = { ...controls.patternControls, [key]: value };
-    const newControls = { ...controls, patternControls: newPatternControls };
-    setControls(newControls);
-    localStorage.setItem('chartControls', JSON.stringify(newControls));
-    onControlsChange(newControls);
-  };
-
   // Call onControlsChange with initial values on mount
   useEffect(() => {
     onControlsChange(controls);
   }, []);
-
-  const togglePatternExpansion = () => {
-    setExpandedPatterns(!expandedPatterns);
-  };
 
   return (
     <div className="glass-panel rounded-lg p-4 animate-fade-in">
@@ -144,90 +121,16 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
           />
         </div>
         
-        {/* Pattern Detection with sub-controls */}
-        <div>
-          <div className="flex items-center justify-between">
-            <div 
-              className="flex items-center gap-2 cursor-pointer" 
-              onClick={togglePatternExpansion}
-            >
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Pattern Detection</span>
-              {expandedPatterns ? 
-                <ChevronDown className="h-3 w-3 text-muted-foreground" /> : 
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
-              }
-            </div>
-            <Switch 
-              checked={controls.showPatterns}
-              onCheckedChange={(checked) => handleControlChange('showPatterns', checked)}
-            />
+        {/* Pattern Detection - without sub-controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Pattern Detection</span>
           </div>
-          
-          {/* Sub-toggles for patterns that appear when expanded */}
-          {expandedPatterns && controls.showPatterns && (
-            <div className="ml-6 mt-2 space-y-2 py-2 pl-2 border-l border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Triangle className="h-3 w-3 text-pink-400 rotate-180" />
-                  <span className="text-xs text-muted-foreground">Head & Shoulders</span>
-                </div>
-                <Switch 
-                  checked={controls.patternControls.showHeadAndShoulders}
-                  onCheckedChange={(checked) => handlePatternControlChange('showHeadAndShoulders', checked)}
-                  className="scale-75 origin-right"
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3 w-3 text-orange-400" />
-                  <span className="text-xs text-muted-foreground">Double Top</span>
-                </div>
-                <Switch 
-                  checked={controls.patternControls.showDoubleTop}
-                  onCheckedChange={(checked) => handlePatternControlChange('showDoubleTop', checked)}
-                  className="scale-75 origin-right"
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="h-3 w-3 text-green-400" />
-                  <span className="text-xs text-muted-foreground">Double Bottom</span>
-                </div>
-                <Switch 
-                  checked={controls.patternControls.showDoubleBottom}
-                  onCheckedChange={(checked) => handlePatternControlChange('showDoubleBottom', checked)}
-                  className="scale-75 origin-right"
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Triangle className="h-3 w-3 text-blue-400" />
-                  <span className="text-xs text-muted-foreground">Triangle</span>
-                </div>
-                <Switch 
-                  checked={controls.patternControls.showTriangle}
-                  onCheckedChange={(checked) => handlePatternControlChange('showTriangle', checked)}
-                  className="scale-75 origin-right"
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ArrowDown className="h-3 w-3 text-red-400 rotate-45" />
-                  <span className="text-xs text-muted-foreground">Wedge</span>
-                </div>
-                <Switch 
-                  checked={controls.patternControls.showWedge}
-                  onCheckedChange={(checked) => handlePatternControlChange('showWedge', checked)}
-                  className="scale-75 origin-right"
-                />
-              </div>
-            </div>
-          )}
+          <Switch 
+            checked={controls.showPatterns}
+            onCheckedChange={(checked) => handleControlChange('showPatterns', checked)}
+          />
         </div>
         
         <div className="flex items-center justify-between">

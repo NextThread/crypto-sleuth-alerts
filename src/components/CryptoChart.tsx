@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables, ChartType } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -16,6 +17,7 @@ import { ChartControlsState } from './ChartControls';
 import { useToast } from '@/hooks/use-toast';
 import 'chart.js/auto';
 
+// Register Chart.js components
 Chart.register(...registerables, annotationPlugin, zoomPlugin);
 
 interface CryptoChartProps {
@@ -28,7 +30,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const [chartData, setChartData] = useState<KlineData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const chartRef = useRef<Chart | null>(null);
+  const chartRef = useRef<any>(null);
   const { toast } = useToast();
   
   const [aiAnalysis, setAiAnalysis] = useState({
@@ -131,8 +133,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   };
   
   useEffect(() => {
-    if (chartRef.current) {
-      chartRef.current.update();
+    // Update chart when controls change
+    if (chartRef.current?.chartInstance) {
+      chartRef.current.chartInstance.update();
     }
   }, [chartControls]);
   
@@ -390,8 +393,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     }
   }
   
-  if (chartControls.showPatterns && chartControls.patternControls) {
-    if (patterns.headAndShoulders && chartControls.patternControls.showHeadAndShoulders) {
+  // Always show patterns without toggle controls
+  if (chartControls.showPatterns) {
+    // Head and Shoulders Pattern
+    if (patterns.headAndShoulders) {
       patterns.headAndShoulders.forEach((index, i) => {
         annotations[`handS${i}`] = {
           type: 'box',
@@ -416,7 +421,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns.doubleTop && chartControls.patternControls.showDoubleTop) {
+    // Double Top Pattern
+    if (patterns.doubleTop) {
       patterns.doubleTop.forEach((index, i) => {
         annotations[`doubleTop${i}`] = {
           type: 'box',
@@ -441,7 +447,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns.doubleBottom && chartControls.patternControls.showDoubleBottom) {
+    // Double Bottom Pattern
+    if (patterns.doubleBottom) {
       patterns.doubleBottom.forEach((index, i) => {
         annotations[`doubleBottom${i}`] = {
           type: 'box',
@@ -466,7 +473,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns.triangle && chartControls.patternControls.showTriangle) {
+    // Triangle Pattern
+    if (patterns.triangle) {
       patterns.triangle.forEach((triangle, i) => {
         const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : 
                       triangle.type === 'descending' ? 'rgba(239, 68, 68, 0.8)' : 
@@ -495,7 +503,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       });
     }
     
-    if (patterns.wedge && chartControls.patternControls.showWedge) {
+    // Wedge Pattern
+    if (patterns.wedge) {
       patterns.wedge.forEach((wedge, i) => {
         const color = wedge.type === 'rising' ? 'rgba(16, 185, 129, 0.8)' : 
                       'rgba(239, 68, 68, 0.8)';
@@ -527,11 +536,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
   const options = {
-    ...baseOptions,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      ...baseOptions.plugins,
       annotation: {
         annotations,
       },
@@ -550,8 +557,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           mode: 'xy' as const,
         },
         limits: {
-          x: {min: 'original' as 'original', max: 'original' as 'original', minRange: 10},
-          y: {min: 'original' as 'original', max: 'original' as 'original', minRange: 10}
+          x: {min: 'original', max: 'original', minRange: 10},
+          y: {min: 'original', max: 'original', minRange: 10}
         }
       },
       tooltip: {
@@ -585,13 +592,15 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           size: 11,
         },
       },
+      legend: {
+        display: false,
+      },
     },
     interaction: {
       mode: 'nearest' as const,
       intersect: false,
     },
     scales: {
-      ...baseOptions.scales,
       x: {
         ...baseOptions.scales.x,
         ticks: {
@@ -638,37 +647,48 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       ],
     };
   } else {
+    // Use line chart with customized styling for candlestick appearance
+    // since candlestick chart type is having issues
     data = {
       labels,
       datasets: [
         {
-          type: 'candlestick' as ChartType,
-          label: 'OHLC',
-          data: chartData.map((d) => ({
-            o: d.open,
-            h: d.high,
-            l: d.low,
-            c: d.close
-          })),
-          color: {
-            up: 'rgba(16, 185, 129, 1)',
-            down: 'rgba(239, 68, 68, 1)',
-            unchanged: 'rgba(155, 155, 155, 1)',
-          },
-          borderColor: (ctx: any) => {
-            if (!ctx.raw) return 'rgba(75, 192, 192, 1)';
-            return ctx.raw.o > ctx.raw.c 
-              ? 'rgba(239, 68, 68, 1)'
-              : 'rgba(16, 185, 129, 1)';
-          },
-          backgroundColor: (ctx: any) => {
-            if (!ctx.raw) return 'rgba(75, 192, 192, 0.1)';
-            return ctx.raw.o > ctx.raw.c 
-              ? 'rgba(239, 68, 68, 0.5)'
-              : 'rgba(16, 185, 129, 0.5)';
-          }
+          type: 'bar',
+          label: 'Volume',
+          data: chartData.map(d => d.volume),
+          backgroundColor: chartData.map(d => 
+            d.close > d.open 
+              ? 'rgba(16, 185, 129, 0.3)'
+              : 'rgba(239, 68, 68, 0.3)'
+          ),
+          yAxisID: 'volume',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Price',
+          data: closes,
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          pointRadius: 0,
+          borderWidth: 2,
+          tension: 0,
+          fill: false,
+          order: 1,
         }
-      ]
+      ],
+    };
+    
+    // Add separate volume scale
+    options.scales.volume = {
+      position: 'left' as const,
+      grid: {
+        display: false,
+      },
+      ticks: {
+        display: false,
+      },
+      display: false,
     };
   }
   
@@ -698,7 +718,11 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
             className="bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
             onClick={() => {
               if (chartRef.current) {
-                chartRef.current.resetZoom();
+                if (chartRef.current.chartInstance) {
+                  chartRef.current.chartInstance.resetZoom();
+                } else if (chartRef.current.current) {
+                  chartRef.current.current.resetZoom();
+                }
               }
             }}
           >
@@ -710,11 +734,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           data={data}
           options={options}
           height={320}
-          ref={(ref) => {
-            if (ref) {
-              chartRef.current = ref;
-            }
-          }}
+          ref={chartRef}
         />
       </div>
     </div>

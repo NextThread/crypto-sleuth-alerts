@@ -13,20 +13,28 @@ import { useToast } from '@/hooks/use-toast';
 const INTERVALS: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
 
+// Default chart controls
+const DEFAULT_CHART_CONTROLS: ChartControlsState = {
+  showSupportResistance: true,
+  showEntryExitPoints: true, 
+  showPatterns: true,
+  showFibonacciLevels: true,
+  showTrendLines: true,
+  chartType: 'line'
+};
+
 const Index = () => {
   const [symbol, setSymbol] = useState<string>(DEFAULT_SYMBOL);
   const [interval, setInterval] = useState<TimeInterval>('15m');
   const [chartControls, setChartControls] = useState<ChartControlsState>(() => {
     // Get chart controls from localStorage on mount
-    const savedControls = localStorage.getItem('chartControls');
-    return savedControls ? JSON.parse(savedControls) : {
-      showSupportResistance: true,
-      showEntryExitPoints: true, 
-      showPatterns: true,
-      showFibonacciLevels: true,
-      showTrendLines: true,
-      chartType: 'line'
-    };
+    try {
+      const savedControls = localStorage.getItem('chartControls');
+      return savedControls ? { ...DEFAULT_CHART_CONTROLS, ...JSON.parse(savedControls) } : DEFAULT_CHART_CONTROLS;
+    } catch (error) {
+      console.error('Error parsing localStorage chart controls', error);
+      return DEFAULT_CHART_CONTROLS;
+    }
   });
   
   const { toast } = useToast();
