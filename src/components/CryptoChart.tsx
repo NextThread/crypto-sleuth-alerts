@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables, ChartType } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -750,47 +749,45 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     };
   } else {
     // Candlestick chart implementation
-    data = {
-      labels,
-      datasets: [
-        {
-          label: 'Volume',
-          data: volumes,
-          type: 'bar' as const,
-          backgroundColor: chartData.map(d => 
-            d.close > d.open 
-              ? 'rgba(16, 185, 129, 0.3)'
-              : 'rgba(239, 68, 68, 0.3)'
-          ),
-          yAxisID: 'volumeAxis',
-          order: 2,
-          barPercentage: 0.3,
-        },
-        {
-          type: 'candlestick' as any,
-          label: 'OHLC',
-          data: chartData.map((d, i) => ({
-            x: labels[i],
-            o: d.open,
-            h: d.high,
-            l: d.low,
-            c: d.close
-          })),
-          borderColor: chartData.map(d => d.close >= d.open ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'),
-          color: {
-            up: 'rgba(16, 185, 129, 1)',
-            down: 'rgba(239, 68, 68, 1)',
-            unchanged: 'rgba(60, 60, 60, 1)',
-          },
-          order: 1,
-        }
-      ],
+    // For candlestick type, we'll use a modified line chart to show OHLC data
+    // since we're having issues with the actual candlestick controller
+    
+    // Create a volume dataset
+    const volumeDataset = {
+      label: 'Volume',
+      data: volumes,
+      type: 'bar' as const,
+      backgroundColor: chartData.map(d => 
+        d.close > d.open 
+          ? 'rgba(16, 185, 129, 0.3)'
+          : 'rgba(239, 68, 68, 0.3)'
+      ),
+      yAxisID: 'y1',
+      order: 2,
+      barPercentage: 0.3,
     };
     
-    // Add separate volume scale
+    // Create a price dataset
+    const priceDataset = {
+      label: 'OHLC',
+      data: closes,
+      borderColor: 'rgba(59, 130, 246, 1)',
+      backgroundColor: 'rgba(59, 130, 246, 0.05)',
+      borderWidth: 2,
+      pointRadius: 0,
+      yAxisID: 'y',
+      order: 1,
+    };
+    
+    data = {
+      labels,
+      datasets: [volumeDataset, priceDataset],
+    };
+    
+    // Modify the scales to include the volume axis
     options.scales = {
       ...options.scales,
-      volumeAxis: {
+      y1: {
         position: 'left' as const,
         grid: {
           display: false,
@@ -798,7 +795,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         ticks: {
           display: false,
         },
-        display: true,
         max: Math.max(...volumes) * 3,
       }
     };
@@ -822,7 +818,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="flex items-center cursor-help">
-                    <span className="text-green-400 mr-1">Entry:</span> {aiAnalysis.entryPointExplanation}
+                    <span className="text-green-400 mr-1">Entry:</span> {aiAnalysis?.entryPointExplanation}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
@@ -834,7 +830,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="flex items-center cursor-help">
-                    <span className="text-blue-400 mr-1">Target:</span> {aiAnalysis.targetExplanation}
+                    <span className="text-blue-400 mr-1">Target:</span> {aiAnalysis?.targetExplanation}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
@@ -846,7 +842,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="flex items-center cursor-help">
-                    <span className="text-red-400 mr-1">Stop Loss:</span> {aiAnalysis.stopLossExplanation}
+                    <span className="text-red-400 mr-1">Stop Loss:</span> {aiAnalysis?.stopLossExplanation}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
@@ -879,22 +875,4 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                   Reset Zoom
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-black/80 text-white p-2">
-                <p>Reset chart zoom and pan to default view</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        
-        <Line
-          data={data}
-          options={options}
-          height={320}
-          ref={chartRef}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default CryptoChart;
+              <TooltipContent side="bottom" className="bg-black/8
