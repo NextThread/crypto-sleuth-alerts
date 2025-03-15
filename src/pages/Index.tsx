@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import CryptoSearch from '../components/CryptoSearch';
 import CryptoChart from '../components/CryptoChart';
@@ -8,7 +9,11 @@ import TechnicalAnalysis from '../components/TechnicalAnalysis';
 import ChartControls, { ChartControlsState } from '../components/ChartControls';
 import { TimeInterval } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 const INTERVALS: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
@@ -55,6 +60,18 @@ const Index = () => {
   });
   
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { currentSubscription, decrementSearches } = useSubscription();
+  const [searchLimitReached, setSearchLimitReached] = useState(false);
+  
+  useEffect(() => {
+    // Check if user has searches remaining
+    if (currentSubscription.searchesRemaining <= 0) {
+      setSearchLimitReached(true);
+    } else {
+      setSearchLimitReached(false);
+    }
+  }, [currentSubscription.searchesRemaining]);
   
   useEffect(() => {
     // Check URL params for symbol and interval
@@ -89,7 +106,25 @@ const Index = () => {
   }, [symbol, interval, toast]);
   
   const handleSymbolSelect = (newSymbol: string) => {
-    setSymbol(newSymbol);
+    // Check if user can search for a new symbol
+    if (
+      newSymbol !== symbol && 
+      currentSubscription.searchesRemaining <= 0
+    ) {
+      toast({
+        title: "Search Limit Reached",
+        description: "You've reached your search limit. Please subscribe to continue.",
+        variant: "destructive",
+      });
+      setSearchLimitReached(true);
+      return;
+    }
+    
+    // Only decrement searches if symbol actually changes
+    if (newSymbol !== symbol) {
+      decrementSearches();
+      setSymbol(newSymbol);
+    }
   };
   
   const handleIntervalChange = (newInterval: TimeInterval) => {
@@ -122,6 +157,25 @@ const Index = () => {
           </div>
           <CryptoSearch onSymbolSelect={handleSymbolSelect} selectedSymbol={symbol} />
         </div>
+        
+        {/* Search Limit Alert */}
+        {searchLimitReached && (
+          <Alert className="mb-6 border-yellow-600 bg-yellow-600/10 animate-fade-in">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="flex justify-between items-center">
+              <div>
+                You've reached your search limit. Subscribe to analyze more cryptocurrencies.
+              </div>
+              <Button
+                size="sm"
+                onClick={() => navigate('/subscription')}
+                className="ml-4"
+              >
+                Subscribe Now
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         
         {/* Time Interval Tabs */}
         <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-6 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600">
