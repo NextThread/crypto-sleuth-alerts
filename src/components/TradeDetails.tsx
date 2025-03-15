@@ -85,7 +85,7 @@ const TradeDetails = ({ chartData, symbol }: TradeDetailsProps) => {
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center justify-between">
           <span>Trade Details</span>
-          <Badge variant={tradeInfo.trend === 'bullish' ? 'success' : 'destructive'} className="ml-2">
+          <Badge variant={tradeInfo.trend === 'bullish' ? 'default' : 'destructive'} className="ml-2">
             {tradeInfo.trend === 'bullish' ? 
               <ArrowUpRight className="h-3 w-3 mr-1" /> : 
               <ArrowDownRight className="h-3 w-3 mr-1" />
