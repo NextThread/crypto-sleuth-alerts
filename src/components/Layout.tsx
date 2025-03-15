@@ -21,7 +21,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-semibold tracking-tight">
-              Crypto<span className="text-primary">Insight</span>
+              Chart<span className="text-primary">Pulse</span>
             </Link>
           </div>
           
@@ -75,7 +75,7 @@ const Layout = ({ children }: LayoutProps) => {
       <footer className="mt-auto w-full border-t border-border py-6">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} CryptoInsight. All rights reserved.
+            &copy; {new Date().getFullYear()} ChartPulse. All rights reserved.
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <span className="text-xs text-muted-foreground">
