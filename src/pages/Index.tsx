@@ -6,14 +6,15 @@ import CryptoSearch from '../components/CryptoSearch';
 import CryptoChart from '../components/CryptoChart';
 import PriceMetrics from '../components/PriceMetrics';
 import TechnicalAnalysis from '../components/TechnicalAnalysis';
+import TradeDetails from '../components/TradeDetails';
 import ChartControls, { ChartControlsState } from '../components/ChartControls';
-import { TimeInterval } from '../services/binanceService';
+import { TimeInterval, getKlineData } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, BarChart2 } from 'lucide-react';
 
 const INTERVALS: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
@@ -57,6 +58,13 @@ const Index = () => {
       console.error('Error parsing localStorage chart controls', error);
       return DEFAULT_CHART_CONTROLS;
     }
+  });
+  
+  const [chartData, setChartData] = useState([]);
+  const [totalSearches, setTotalSearches] = useState<number>(() => {
+    // Get total searches from localStorage on mount
+    const savedTotalSearches = localStorage.getItem('totalSearches');
+    return savedTotalSearches ? parseInt(savedTotalSearches, 10) : 0;
   });
   
   const { toast } = useToast();
@@ -105,6 +113,76 @@ const Index = () => {
     }
   }, [symbol, interval, toast]);
   
+  // Fetch chart data for TradeDetails component
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getKlineData(symbol, interval);
+        setChartData(data);
+      } catch (err) {
+        console.error('Error fetching chart data:', err);
+      }
+    };
+    
+    fetchData();
+    
+    // Set up websocket connection for real-time updates
+    const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
+    const ws = new WebSocket(wsEndpoint);
+    
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.k) {
+        const { t: openTime, o: open, h: high, l: low, c: close, v: volume, T: closeTime, n: numberOfTrades } = message.k;
+        
+        setChartData(prev => {
+          const newData = [...prev];
+          const lastIndex = newData.findIndex(candle => candle.openTime === openTime);
+          
+          if (lastIndex >= 0) {
+            newData[lastIndex] = {
+              openTime,
+              open: parseFloat(open),
+              high: parseFloat(high),
+              low: parseFloat(low),
+              close: parseFloat(close),
+              volume: parseFloat(volume),
+              closeTime,
+              quoteAssetVolume: 0,
+              numberOfTrades,
+            };
+          } else if (newData.length > 0 && openTime > newData[newData.length - 1].openTime) {
+            newData.push({
+              openTime,
+              open: parseFloat(open),
+              high: parseFloat(high),
+              low: parseFloat(low),
+              close: parseFloat(close),
+              volume: parseFloat(volume),
+              closeTime,
+              quoteAssetVolume: 0,
+              numberOfTrades,
+            });
+            if (newData.length > 500) {
+              newData.shift();
+            }
+          }
+          
+          return newData;
+        });
+      }
+    };
+    
+    return () => {
+      ws.close();
+    };
+  }, [symbol, interval]);
+  
+  // Save total searches to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('totalSearches', totalSearches.toString());
+  }, [totalSearches]);
+  
   const handleSymbolSelect = (newSymbol: string) => {
     // Check if user can search for a new symbol
     if (
@@ -120,10 +198,11 @@ const Index = () => {
       return;
     }
     
-    // Only decrement searches if symbol actually changes
+    // Only decrement searches and update counter if symbol actually changes
     if (newSymbol !== symbol) {
       decrementSearches();
       setSymbol(newSymbol);
+      setTotalSearches(prev => prev + 1);
     }
   };
   
@@ -155,7 +234,14 @@ const Index = () => {
               Real-time charts and technical analysis
             </p>
           </div>
-          <CryptoSearch onSymbolSelect={handleSymbolSelect} selectedSymbol={symbol} />
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+            <div className="flex items-center gap-2 text-sm bg-black/20 rounded-md px-3 py-1 animate-fade-in">
+              <BarChart2 className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">Charts Analyzed:</span>
+              <span className="font-mono font-medium">{totalSearches}</span>
+            </div>
+            <CryptoSearch onSymbolSelect={handleSymbolSelect} selectedSymbol={symbol} />
+          </div>
         </div>
         
         {/* Search Limit Alert */}
@@ -208,6 +294,11 @@ const Index = () => {
             <ChartControls onControlsChange={handleChartControlsChange} />
             <TechnicalAnalysis symbol={symbol} interval={interval} />
           </div>
+        </div>
+        
+        {/* Trade Details Section */}
+        <div className="mb-6 animate-fade-in animation-delay-600">
+          <TradeDetails chartData={chartData} symbol={symbol} />
         </div>
       </div>
     </Layout>
