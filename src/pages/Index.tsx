@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -15,9 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, BarChart2 } from 'lucide-react';
+import { doc, getDoc, setDoc, increment, updateDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 const INTERVALS: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
+const CHART_COUNT_KEY = 'globalChartCount';
 
 // Default chart controls
 const DEFAULT_CHART_CONTROLS: ChartControlsState = {
@@ -40,12 +43,10 @@ const Index = () => {
   const [symbol, setSymbol] = useState<string>(DEFAULT_SYMBOL);
   const [interval, setInterval] = useState<TimeInterval>('15m');
   const [chartControls, setChartControls] = useState<ChartControlsState>(() => {
-    // Get chart controls from localStorage on mount
     try {
       const savedControls = localStorage.getItem('chartControls');
       const parsedControls = savedControls ? JSON.parse(savedControls) : {};
       
-      // Ensure pattern controls are properly merged with defaults
       return { 
         ...DEFAULT_CHART_CONTROLS, 
         ...parsedControls,
@@ -61,19 +62,36 @@ const Index = () => {
   });
   
   const [chartData, setChartData] = useState([]);
-  const [totalSearches, setTotalSearches] = useState<number>(() => {
-    // Get total searches from localStorage on mount
-    const savedTotalSearches = localStorage.getItem('totalSearches');
-    return savedTotalSearches ? parseInt(savedTotalSearches, 10) : 0;
-  });
+  const [totalSearches, setTotalSearches] = useState<number>(0);
   
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentSubscription, decrementSearches } = useSubscription();
   const [searchLimitReached, setSearchLimitReached] = useState(false);
+  const { user } = useAuth();
   
   useEffect(() => {
-    // Check if user has searches remaining
+    const fetchGlobalChartCount = async () => {
+      try {
+        const countRef = doc(db, 'stats', CHART_COUNT_KEY);
+        const countDoc = await getDoc(countRef);
+        
+        if (countDoc.exists()) {
+          setTotalSearches(countDoc.data().count || 0);
+        } else {
+          await setDoc(countRef, { count: 0 });
+        }
+      } catch (error) {
+        console.error('Error fetching global chart count:', error);
+        const savedTotalSearches = localStorage.getItem('totalSearches');
+        setTotalSearches(savedTotalSearches ? parseInt(savedTotalSearches, 10) : 0);
+      }
+    };
+    
+    fetchGlobalChartCount();
+  }, []);
+  
+  useEffect(() => {
     if (currentSubscription.searchesRemaining <= 0) {
       setSearchLimitReached(true);
     } else {
@@ -82,7 +100,6 @@ const Index = () => {
   }, [currentSubscription.searchesRemaining]);
   
   useEffect(() => {
-    // Check URL params for symbol and interval
     const urlParams = new URLSearchParams(window.location.search);
     const symbolParam = urlParams.get('symbol');
     const intervalParam = urlParams.get('interval') as TimeInterval | null;
@@ -97,13 +114,11 @@ const Index = () => {
   }, []);
   
   useEffect(() => {
-    // Update URL when symbol or interval changes
     const url = new URL(window.location.href);
     url.searchParams.set('symbol', symbol);
     url.searchParams.set('interval', interval);
     window.history.replaceState({}, '', url.toString());
     
-    // Show toast notification on symbol change
     if (symbol !== DEFAULT_SYMBOL) {
       toast({
         title: 'Symbol Changed',
@@ -113,7 +128,6 @@ const Index = () => {
     }
   }, [symbol, interval, toast]);
   
-  // Fetch chart data for TradeDetails component
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -126,7 +140,6 @@ const Index = () => {
     
     fetchData();
     
-    // Set up websocket connection for real-time updates
     const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
     const ws = new WebSocket(wsEndpoint);
     
@@ -178,13 +191,11 @@ const Index = () => {
     };
   }, [symbol, interval]);
   
-  // Save total searches to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('totalSearches', totalSearches.toString());
   }, [totalSearches]);
   
-  const handleSymbolSelect = (newSymbol: string) => {
-    // Check if user can search for a new symbol
+  const handleSymbolSelect = async (newSymbol: string) => {
     if (
       newSymbol !== symbol && 
       currentSubscription.searchesRemaining <= 0
@@ -198,11 +209,23 @@ const Index = () => {
       return;
     }
     
-    // Only decrement searches and update counter if symbol actually changes
     if (newSymbol !== symbol) {
       decrementSearches();
       setSymbol(newSymbol);
-      setTotalSearches(prev => prev + 1);
+      
+      try {
+        const countRef = doc(db, 'stats', CHART_COUNT_KEY);
+        await updateDoc(countRef, {
+          count: increment(1)
+        });
+        
+        setTotalSearches(prev => prev + 1);
+      } catch (error) {
+        console.error('Error updating global chart count:', error);
+        const newCount = totalSearches + 1;
+        setTotalSearches(newCount);
+        localStorage.setItem('totalSearches', newCount.toString());
+      }
     }
   };
   
@@ -211,7 +234,6 @@ const Index = () => {
   };
   
   const handleChartControlsChange = (newControls: ChartControlsState) => {
-    // Ensure patternControls is properly maintained
     const mergedControls = {
       ...newControls,
       patternControls: {
@@ -226,7 +248,6 @@ const Index = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
           <div>
             <h1 className="text-2xl font-bold animate-fade-in">Crypto Market Analysis</h1>
@@ -244,7 +265,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Search Limit Alert */}
         {searchLimitReached && (
           <Alert className="mb-6 border-yellow-600 bg-yellow-600/10 animate-fade-in">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
@@ -263,7 +283,6 @@ const Index = () => {
           </Alert>
         )}
         
-        {/* Time Interval Tabs */}
         <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-6 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600">
           {INTERVALS.map((item) => (
             <button
@@ -280,12 +299,10 @@ const Index = () => {
           ))}
         </div>
         
-        {/* Price Metrics */}
         <div className="mb-6 animate-fade-in animation-delay-300">
           <PriceMetrics symbol={symbol} />
         </div>
         
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2 animate-fade-in">
             <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
@@ -296,7 +313,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Trade Details Section */}
         <div className="mb-6 animate-fade-in animation-delay-600">
           <TradeDetails chartData={chartData} symbol={symbol} />
         </div>
