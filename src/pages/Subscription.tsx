@@ -7,8 +7,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, X } from 'lucide-react';
+import { Check, X, ExternalLink, AlertCircle } from 'lucide-react';
 import Layout from '../components/Layout';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getSolscanTransactionLink } from '../utils/solanaUtils';
 
 const Subscription = () => {
   const { plans, verifyPayment, isVerifyingPayment, currentSubscription } = useSubscription();
@@ -18,10 +20,12 @@ const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [transactionId, setTransactionId] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [verificationAttempted, setVerificationAttempted] = useState(false);
 
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
     setShowPaymentForm(true);
+    setVerificationAttempted(false);
   };
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -45,11 +49,13 @@ const Subscription = () => {
       return;
     }
     
+    setVerificationAttempted(true);
     const success = await verifyPayment(transactionId, selectedPlan.id);
     
     if (success) {
       setShowPaymentForm(false);
       setTransactionId('');
+      setVerificationAttempted(false);
       navigate('/');
     }
   };
@@ -80,6 +86,7 @@ const Subscription = () => {
             Upgrade your crypto analysis with one of our premium plans and unlock powerful features
           </p>
 
+          {/* Current subscription info */}
           {currentSubscription.planId && (
             <div className="mt-4 p-4 bg-primary/10 rounded-lg inline-block">
               <p>
@@ -146,15 +153,22 @@ const Subscription = () => {
                 <p className="text-xl font-bold mt-2">${selectedPlan?.price}</p>
               </div>
 
+              <Alert className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Your transaction will be verified through Solscan. Make sure to complete the payment and copy the transaction ID correctly.
+                </AlertDescription>
+              </Alert>
+
               <div className="space-y-4 mb-6">
                 <h3 className="font-medium">Payment Instructions:</h3>
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>Open your Phantom wallet app</li>
                   <li>Send <span className="font-bold">${selectedPlan?.price} worth of SOL</span> to this address:</li>
-                  <div className="bg-muted p-2 rounded text-sm font-mono my-2 break-all">
+                  <div className="bg-muted p-2 rounded text-sm font-mono my-2 break-all select-all">
                     HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu
                   </div>
-                  <li>Copy the transaction ID from your wallet</li>
+                  <li>Copy the transaction ID (signature) from your wallet</li>
                   <li>Paste it below and click "Verify Payment"</li>
                 </ol>
               </div>
@@ -166,9 +180,22 @@ const Subscription = () => {
                     id="transaction-id"
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="Enter your transaction ID"
+                    placeholder="Enter your transaction signature"
                     required
                   />
+                  {transactionId && transactionId.length > 20 && verificationAttempted && (
+                    <div className="mt-2">
+                      <a 
+                        href={getSolscanTransactionLink(transactionId)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm flex items-center text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        View transaction on Solscan
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-3">
                   <Button 
@@ -184,6 +211,7 @@ const Subscription = () => {
                     onClick={() => {
                       setShowPaymentForm(false);
                       setSelectedPlan(null);
+                      setVerificationAttempted(false);
                     }}
                   >
                     <X className="h-4 w-4" />

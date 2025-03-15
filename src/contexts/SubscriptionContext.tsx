@@ -1,7 +1,7 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { verifySolanaTransaction, getSolscanTransactionLink } from '../utils/solanaUtils';
 
 export interface Plan {
   id: string;
@@ -27,6 +27,7 @@ interface SubscriptionContextType {
 }
 
 const DEFAULT_SEARCH_LIMIT = 3;
+const SOLANA_RECIPIENT_ADDRESS = "HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu";
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
   {
@@ -77,7 +78,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     searchesRemaining: DEFAULT_SEARCH_LIMIT
   });
 
-  // Load subscription data from localStorage when user changes
   useEffect(() => {
     if (user) {
       const savedData = localStorage.getItem(`${STORAGE_KEY}_${user.uid}`);
@@ -88,7 +88,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           expiresAt: parsedData.expiresAt ? new Date(parsedData.expiresAt) : null
         });
       } else {
-        // Reset to default for new users
         setCurrentSubscription({
           planId: null,
           expiresAt: null,
@@ -96,7 +95,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     } else {
-      // Reset when logged out
       setCurrentSubscription({
         planId: null,
         expiresAt: null,
@@ -105,7 +103,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  // Save subscription data to localStorage when it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem(
@@ -118,7 +115,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentSubscription, user]);
 
-  // Check if subscription has expired
   useEffect(() => {
     if (
       currentSubscription.expiresAt && 
@@ -155,26 +151,23 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock function to verify Solana payments
-  // In a real app, you would integrate with Solana blockchain APIs
   const verifyPayment = async (txId: string, planId: string): Promise<boolean> => {
     setIsVerifyingPayment(true);
     
     try {
-      // Simulate API call to verify transaction
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const selectedPlan = SUBSCRIPTION_PLANS.find(plan => plan.id === planId);
       
-      // For demo purposes, we'll consider the payment valid if txId has more than 10 chars
-      const isValid = txId.length > 10;
+      if (!selectedPlan) {
+        throw new Error("Invalid plan selected");
+      }
       
-      if (isValid) {
-        const selectedPlan = SUBSCRIPTION_PLANS.find(plan => plan.id === planId);
-        
-        if (!selectedPlan) {
-          throw new Error("Invalid plan selected");
-        }
-        
-        // Calculate expiration date based on plan duration
+      const verification = await verifySolanaTransaction(
+        txId, 
+        selectedPlan.price,
+        SOLANA_RECIPIENT_ADDRESS
+      );
+      
+      if (verification.isValid) {
         let expiresAt = new Date();
         if (planId === 'weekly') {
           expiresAt.setDate(expiresAt.getDate() + 7);
@@ -186,7 +179,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         }
         
-        // Update subscription
         setCurrentSubscription({
           planId,
           expiresAt,
@@ -194,17 +186,22 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         });
         
         toast({
-          title: "Payment Successful!",
-          description: `You've subscribed to the ${selectedPlan.name} plan. Enjoy your new features!`,
+          title: "Payment Verified!",
+          description: `Your transaction has been confirmed. You've subscribed to the ${selectedPlan.name} plan!`,
         });
         
         return true;
       } else {
         toast({
           title: "Payment Verification Failed",
-          description: "We couldn't verify your transaction. Please try again or contact support.",
+          description: verification.message,
           variant: "destructive",
         });
+        
+        if (txId.length > 20) {
+          console.info("View transaction on Solscan:", getSolscanTransactionLink(txId));
+        }
+        
         return false;
       }
     } catch (error) {
