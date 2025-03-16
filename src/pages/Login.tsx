@@ -1,10 +1,10 @@
 
+import { Button } from '@/components/ui/button';
+import { BarChart2, PieChart, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect } from 'react';
+import { FcGoogle } from 'react-icons/fc';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { FcGoogle } from 'react-icons/fc';
-import { Sparkles, TrendingUp, BarChart2, PieChart } from 'lucide-react';
 
 const Login = () => {
   const { user, signInWithGoogle, loading } = useAuth();
@@ -30,7 +30,7 @@ const Login = () => {
             </div>
           </div>
           <h1 className="text-4xl font-bold tracking-tight">
-            Crypto<span className="text-primary">Insight</span>
+            Chart<span className="text-primary">Pulse</span>
           </h1>
           <p className="text-muted-foreground max-w-xs mx-auto">
             Advanced analytics and real-time insights for crypto traders
@@ -72,7 +72,7 @@ const Login = () => {
       
       <div className="mt-8 text-center animate-fade-in animation-delay-600">
         <p className="text-muted-foreground text-sm">
-          Trusted by traders worldwide for accurate market analysis
+          Trusted by 10000+ traders worldwide for accurate market analysis
         </p>
       </div>
     </div>
