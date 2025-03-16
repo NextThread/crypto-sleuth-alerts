@@ -8,6 +8,9 @@ import TechnicalAnalysis from '../components/TechnicalAnalysis';
 import TradeDetails from '../components/TradeDetails';
 import ChartControls, { ChartControlsState } from '../components/ChartControls';
 import CryptoNews from '../components/CryptoNews';
+import HowWeWork from '../components/HowWeWork';
+import AnalysisCounter from '../components/AnalysisCounter';
+import BacktestingResults from '../components/BacktestingResults';
 import { TimeInterval, getKlineData } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -307,6 +310,10 @@ const Index = () => {
           <PriceMetrics symbol={symbol} />
         </div>
         
+        <div className="mb-6">
+          <AnalysisCounter />
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2 animate-fade-in">
             <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
@@ -315,6 +322,14 @@ const Index = () => {
             <ChartControls onControlsChange={handleChartControlsChange} />
             <TechnicalAnalysis symbol={symbol} interval={interval} />
           </div>
+        </div>
+        
+        <div className="mb-6">
+          <HowWeWork />
+        </div>
+        
+        <div className="mb-6">
+          <BacktestingResults />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
