@@ -204,6 +204,48 @@ const BacktestingResults = () => {
   const [historicalResults, setHistoricalResults] = useState<BacktestResult[]>(historicalResultsInit);
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
+  // Stats state with random changes
+  const [successRate, setSuccessRate] = useState<number>(85);
+  const [averageProfit, setAverageProfit] = useState<number>(8.5);
+  const [totalTrades, setTotalTrades] = useState<number>(100);
+  
+  useEffect(() => {
+    // Initialize total trades from localStorage or default to 100
+    const storedTotalTrades = localStorage.getItem('backtestingTotalTrades');
+    if (storedTotalTrades) {
+      setTotalTrades(parseInt(storedTotalTrades, 10));
+    } else {
+      localStorage.setItem('backtestingTotalTrades', totalTrades.toString());
+    }
+    
+    // Check last update date
+    const today = new Date().toISOString().split('T')[0];
+    const lastUpdateDate = localStorage.getItem('backtestingLastUpdateDate');
+    
+    if (lastUpdateDate !== today) {
+      // It's a new day, increase total trades
+      const increase = Math.floor(Math.random() * 6) + 10; // Random number between 10-15
+      const newTotal = totalTrades + increase;
+      setTotalTrades(newTotal);
+      localStorage.setItem('backtestingTotalTrades', newTotal.toString());
+      localStorage.setItem('backtestingLastUpdateDate', today);
+    }
+    
+    // Update stats randomly every minute
+    const updateStats = () => {
+      // Random success rate between 78% and 98%
+      setSuccessRate(Math.floor(Math.random() * 21) + 78);
+      
+      // Random average profit between 4% and 36%
+      setAverageProfit(Math.random() * 32 + 4);
+    };
+    
+    updateStats(); // Initial update
+    const statsInterval = setInterval(updateStats, 60000); // Update every minute
+    
+    return () => clearInterval(statsInterval);
+  }, [totalTrades]);
 
   // Function to update prices
   const updatePrices = async () => {
@@ -285,12 +327,6 @@ const BacktestingResults = () => {
       localStorage.setItem('lastBacktestingDate', today);
     }
   }, []);
-
-  // Calculate success rate and average profit
-  const allResults = [...recentResults, ...historicalResults];
-  const successfulTrades = allResults.filter(r => r.status === "HIT_TARGET").length;
-  const successRate = (successfulTrades / allResults.length) * 100;
-  const averageProfit = allResults.reduce((acc, r) => acc + r.profit, 0) / allResults.length;
 
   const renderTradeRow = (trade: BacktestResult) => (
     <div 
@@ -407,7 +443,7 @@ const BacktestingResults = () => {
           <div className="p-4 rounded-lg bg-secondary/20 backdrop-blur-sm border border-white/5">
             <p className="text-muted-foreground text-xs">Total Trades</p>
             <h3 className="text-2xl font-mono font-bold">
-              {allResults.length}
+              {totalTrades}
             </h3>
           </div>
         </div>
