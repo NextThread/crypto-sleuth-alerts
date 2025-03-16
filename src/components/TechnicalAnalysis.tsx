@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { 
@@ -7,7 +8,8 @@ import {
   detectPatterns
 } from '../utils/technicalIndicators';
 import { formatPrice } from '../utils/chartUtils';
-import { TrendingUp, TrendingDown, Minus, Target, AlertTriangle, Activity, BarChart2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Target, AlertTriangle, Activity, BarChart2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface TechnicalAnalysisProps {
   symbol: string;
@@ -18,6 +20,7 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   const [data, setData] = useState<KlineData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const [rsi, setRsi] = useState<number | null>(null);
   const [macd, setMacd] = useState<{ value: number; signal: number } | null>(null);
@@ -171,125 +174,153 @@ const TechnicalAnalysis = ({ symbol, interval }: TechnicalAnalysisProps) => {
   const patternEval = getPatternEvaluation();
   
   return (
-    <div className="glass-card rounded-lg p-6 h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-4">Technical Analysis</h3>
-      
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-muted-foreground flex items-center gap-2">
-          <Activity className="w-4 h-4" />
-          Trend
-        </span>
-        <div className="flex items-center space-x-2">
-          {getTrendIcon()}
-          <span className={`font-medium capitalize ${trend === 'bullish' ? 'text-crypto-bullish' : trend === 'bearish' ? 'text-crypto-bearish' : 'text-crypto-neutral'}`}>
-            {trend}
-          </span>
-        </div>
+    <Collapsible 
+      open={isExpanded} 
+      onOpenChange={setIsExpanded}
+      className="glass-card rounded-lg overflow-hidden transition-all duration-300 transform hover:shadow-lg"
+    >
+      <div className="p-4 border-b border-white/5">
+        <CollapsibleTrigger className="flex items-center justify-between w-full">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            Technical Analysis
+          </h3>
+          <div className="flex items-center">
+            <div className={`px-2 py-1 rounded-full text-xs font-medium mr-2 ${
+              trend === 'bullish' ? 'bg-crypto-bullish/20 text-crypto-bullish' : 
+              trend === 'bearish' ? 'bg-crypto-bearish/20 text-crypto-bearish' : 
+              'bg-crypto-neutral/20 text-crypto-neutral'
+            }`}>
+              {trend.toUpperCase()}
+            </div>
+            {isExpanded ? 
+              <ChevronUp className="h-5 w-5 text-muted-foreground" /> : 
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            }
+          </div>
+        </CollapsibleTrigger>
       </div>
       
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-muted-foreground flex items-center gap-2">
-          <BarChart2 className="w-4 h-4" />
-          Patterns
-        </span>
-        <div className="flex items-center space-x-2">
-          <span className={`font-medium ${
-            patternEval.evaluation === 'bullish' ? 'text-crypto-bullish' : 
-            patternEval.evaluation === 'bearish' ? 'text-crypto-bearish' : 
-            'text-crypto-neutral'
-          }`}>
-            {patternEval.description}
-          </span>
-        </div>
-      </div>
-      
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-muted-foreground">RSI</span>
-        <div className="flex items-center space-x-2">
-          <span className={`font-medium ${getRsiClass()}`}>
-            {rsi !== null ? rsi.toFixed(2) : 'N/A'}
-          </span>
-          <div className="text-xs px-1.5 py-0.5 rounded-full bg-secondary">
-            {rsi !== null ? (rsi >= 70 ? 'Overbought' : rsi <= 30 ? 'Oversold' : 'Neutral') : ''}
+      <CollapsibleContent>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-muted-foreground flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Trend
+            </span>
+            <div className="flex items-center space-x-2">
+              {getTrendIcon()}
+              <span className={`font-medium capitalize ${trend === 'bullish' ? 'text-crypto-bullish' : trend === 'bearish' ? 'text-crypto-bearish' : 'text-crypto-neutral'}`}>
+                {trend}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-muted-foreground flex items-center gap-2">
+              <BarChart2 className="w-4 h-4" />
+              Patterns
+            </span>
+            <div className="flex items-center space-x-2">
+              <span className={`font-medium ${
+                patternEval.evaluation === 'bullish' ? 'text-crypto-bullish' : 
+                patternEval.evaluation === 'bearish' ? 'text-crypto-bearish' : 
+                'text-crypto-neutral'
+              }`}>
+                {patternEval.description}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-muted-foreground">RSI</span>
+            <div className="flex items-center space-x-2">
+              <span className={`font-medium ${getRsiClass()}`}>
+                {rsi !== null ? rsi.toFixed(2) : 'N/A'}
+              </span>
+              <div className="text-xs px-1.5 py-0.5 rounded-full bg-secondary/50">
+                {rsi !== null ? (rsi >= 70 ? 'Overbought' : rsi <= 30 ? 'Oversold' : 'Neutral') : ''}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-muted-foreground">MACD</span>
+            <div className="flex items-center space-x-2">
+              <span className={`font-medium ${getMacdClass()}`}>
+                {macd ? macd.value.toFixed(6) : 'N/A'}
+              </span>
+              <div className="text-xs px-1.5 py-0.5 rounded-full bg-secondary/50">
+                {macd ? (macd.value > macd.signal ? 'Bullish' : 'Bearish') : ''}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-muted-foreground">Risk/Reward</span>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">
+                {riskReward !== null ? `1:${riskReward.toFixed(2)}` : 'N/A'}
+              </span>
+              <div className="text-xs px-1.5 py-0.5 rounded-full bg-secondary/50">
+                {riskReward !== null ? (riskReward >= 2 ? 'Favorable' : 'Unfavorable') : ''}
+              </div>
+            </div>
+          </div>
+          
+          {(patternCount.headAndShoulders > 0 || patternCount.doubleTop > 0 || 
+            patternCount.doubleBottom > 0 || patternCount.triangle > 0 || patternCount.wedge > 0) && (
+            <div className="mb-6 p-4 bg-secondary/20 backdrop-blur-sm rounded-md border border-white/5">
+              <h4 className="text-sm font-medium mb-3">Patterns Detected:</h4>
+              <ul className="text-xs space-y-2">
+                {patternCount.headAndShoulders > 0 && (
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Head & Shoulders:</span>
+                    <span className="text-crypto-bearish">{patternCount.headAndShoulders} (Bearish)</span>
+                  </li>
+                )}
+                {patternCount.doubleTop > 0 && (
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Double Top:</span>
+                    <span className="text-crypto-bearish">{patternCount.doubleTop} (Bearish)</span>
+                  </li>
+                )}
+                {patternCount.doubleBottom > 0 && (
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Double Bottom:</span>
+                    <span className="text-crypto-bullish">{patternCount.doubleBottom} (Bullish)</span>
+                  </li>
+                )}
+                {patternCount.triangle > 0 && (
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Triangle:</span>
+                    <span className="text-crypto-neutral">{patternCount.triangle} (Neutral)</span>
+                  </li>
+                )}
+                {patternCount.wedge > 0 && (
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Wedge:</span>
+                    <span className="text-crypto-neutral">{patternCount.wedge} (Neutral)</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+          
+          <div className="pt-4 border-t border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Target className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">Suggested Target</span>
+              </div>
+              <span className="font-medium">
+                {formatPrice(currentPrice * (trend === 'bullish' ? 1.05 : trend === 'bearish' ? 0.95 : 1))}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-muted-foreground">MACD</span>
-        <div className="flex items-center space-x-2">
-          <span className={`font-medium ${getMacdClass()}`}>
-            {macd ? macd.value.toFixed(6) : 'N/A'}
-          </span>
-          <div className="text-xs px-1.5 py-0.5 rounded-full bg-secondary">
-            {macd ? (macd.value > macd.signal ? 'Bullish' : 'Bearish') : ''}
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-muted-foreground">Risk/Reward</span>
-        <div className="flex items-center space-x-2">
-          <span className="font-medium">
-            {riskReward !== null ? `1:${riskReward.toFixed(2)}` : 'N/A'}
-          </span>
-          <div className="text-xs px-1.5 py-0.5 rounded-full bg-secondary">
-            {riskReward !== null ? (riskReward >= 2 ? 'Favorable' : 'Unfavorable') : ''}
-          </div>
-        </div>
-      </div>
-      
-      {(patternCount.headAndShoulders > 0 || patternCount.doubleTop > 0 || 
-        patternCount.doubleBottom > 0 || patternCount.triangle > 0 || patternCount.wedge > 0) && (
-        <div className="mb-6 p-3 bg-secondary/30 rounded-md">
-          <h4 className="text-sm font-medium mb-2">Patterns Detected:</h4>
-          <ul className="text-xs space-y-1.5">
-            {patternCount.headAndShoulders > 0 && (
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Head & Shoulders:</span>
-                <span className="text-crypto-bearish">{patternCount.headAndShoulders} (Bearish)</span>
-              </li>
-            )}
-            {patternCount.doubleTop > 0 && (
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Double Top:</span>
-                <span className="text-crypto-bearish">{patternCount.doubleTop} (Bearish)</span>
-              </li>
-            )}
-            {patternCount.doubleBottom > 0 && (
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Double Bottom:</span>
-                <span className="text-crypto-bullish">{patternCount.doubleBottom} (Bullish)</span>
-              </li>
-            )}
-            {patternCount.triangle > 0 && (
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Triangle:</span>
-                <span className="text-crypto-neutral">{patternCount.triangle} (Neutral)</span>
-              </li>
-            )}
-            {patternCount.wedge > 0 && (
-              <li className="flex justify-between">
-                <span className="text-muted-foreground">Wedge:</span>
-                <span className="text-crypto-neutral">{patternCount.wedge} (Neutral)</span>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-      
-      <div className="mt-auto pt-6 border-t border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Target className="w-4 h-4 text-primary" />
-            <span className="text-muted-foreground">Suggested Target</span>
-          </div>
-          <span className="font-medium">
-            {formatPrice(currentPrice * (trend === 'bullish' ? 1.05 : trend === 'bearish' ? 0.95 : 1))}
-          </span>
-        </div>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
