@@ -1,0 +1,172 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --card: 222 47% 13%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 222 45% 11%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 217 33% 18%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 212 100% 47%;
+    
+    /* Crypto specific */
+    --crypto-bullish: 142 76% 36%;
+    --crypto-bearish: 0 84% 60%;
+    --crypto-neutral: 217 10% 64%;
+    --crypto-volume: 217 91% 60%;
+    --crypto-support: 142 76% 36%;
+    --crypto-resistance: 0 84% 60%;
+    --crypto-entry: 217 91% 60%;
+    --crypto-exit: 142 76% 36%;
+    --crypto-stop: 0 84% 60%;
+    --crypto-target: 142 76% 36%;
+    
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border selection:bg-primary/20 selection:text-foreground transition-all duration-200;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply backdrop-blur-lg bg-background/30 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-md bg-card/40 border border-white/10 shadow-md;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+  
+  .animation-delay-900 {
+    animation-delay: 900ms;
+  }
+  
+  .animation-delay-1200 {
+    animation-delay: 1200ms;
+  }
+  
+  /* New animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+}
+
+@layer components {
+  .chart-label {
+    @apply inline-flex items-center justify-center rounded-sm px-1.5 py-0.5 text-xs font-medium tracking-wide;
+  }
+  
+  .value-up {
+    @apply text-crypto-bullish;
+  }
+  
+  .value-down {
+    @apply text-crypto-bearish;
+  }
+  
+  .value-neutral {
+    @apply text-crypto-neutral;
+  }
+  
+  .chart-grid {
+    @apply stroke-muted/40;
+  }
+  
+  .chart-tooltip {
+    @apply glass-panel rounded-md px-3 py-2 text-sm backdrop-blur-lg;
+  }
+  
+  .tag {
+    @apply rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* New keyframes for the animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
