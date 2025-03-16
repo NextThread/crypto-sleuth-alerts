@@ -17,11 +17,12 @@ interface BacktestResult {
   duration: string;
 }
 
+// Today's trades (most recent)
 const recentResults: BacktestResult[] = [
   {
     id: "BTC-001",
     pair: "BTC/USDT",
-    date: "2023-06-15",
+    date: new Date().toISOString().split('T')[0], // Today's date
     type: "LONG",
     entry: 25800,
     target: 28500,
@@ -33,7 +34,7 @@ const recentResults: BacktestResult[] = [
   {
     id: "ETH-002",
     pair: "ETH/USDT",
-    date: "2023-06-22",
+    date: new Date().toISOString().split('T')[0], // Today's date
     type: "LONG",
     entry: 1850,
     target: 1950,
@@ -45,7 +46,7 @@ const recentResults: BacktestResult[] = [
   {
     id: "SOL-003",
     pair: "SOL/USDT",
-    date: "2023-07-02",
+    date: new Date().toISOString().split('T')[0], // Today's date
     type: "SHORT",
     entry: 28.50,
     target: 24.20,
@@ -57,7 +58,7 @@ const recentResults: BacktestResult[] = [
   {
     id: "ADA-004",
     pair: "ADA/USDT",
-    date: "2023-07-10",
+    date: new Date().toISOString().split('T')[0], // Today's date
     type: "LONG",
     entry: 0.28,
     target: 0.32,
@@ -69,7 +70,7 @@ const recentResults: BacktestResult[] = [
   {
     id: "XRP-005",
     pair: "XRP/USDT",
-    date: "2023-07-18",
+    date: new Date().toISOString().split('T')[0], // Today's date
     type: "SHORT",
     entry: 0.82,
     target: 0.72,
@@ -81,7 +82,7 @@ const recentResults: BacktestResult[] = [
   {
     id: "BNB-006",
     pair: "BNB/USDT",
-    date: "2023-07-25",
+    date: new Date().toISOString().split('T')[0], // Today's date
     type: "LONG",
     entry: 240,
     target: 260,
@@ -92,11 +93,13 @@ const recentResults: BacktestResult[] = [
   }
 ];
 
+// Previous days' trades (historical)
 const historicalResults: BacktestResult[] = [
+  // Yesterday
   {
     id: "DOT-007",
     pair: "DOT/USDT",
-    date: "2023-05-10",
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
     type: "LONG",
     entry: 5.60,
     target: 6.20,
@@ -108,7 +111,7 @@ const historicalResults: BacktestResult[] = [
   {
     id: "LINK-008",
     pair: "LINK/USDT",
-    date: "2023-05-18",
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
     type: "SHORT",
     entry: 7.80,
     target: 6.90,
@@ -120,7 +123,7 @@ const historicalResults: BacktestResult[] = [
   {
     id: "MATIC-009",
     pair: "MATIC/USDT",
-    date: "2023-05-25",
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
     type: "LONG",
     entry: 0.85,
     target: 0.95,
@@ -132,7 +135,7 @@ const historicalResults: BacktestResult[] = [
   {
     id: "AVAX-010",
     pair: "AVAX/USDT",
-    date: "2023-06-02",
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
     type: "SHORT",
     entry: 15.20,
     target: 13.50,
@@ -140,6 +143,43 @@ const historicalResults: BacktestResult[] = [
     status: "HIT_TARGET",
     profit: 11.18,
     duration: "4 days"
+  },
+  // Day before yesterday
+  {
+    id: "ATOM-011",
+    pair: "ATOM/USDT",
+    date: new Date(Date.now() - 172800000).toISOString().split('T')[0], // Day before yesterday
+    type: "LONG",
+    entry: 8.20,
+    target: 8.80,
+    stopLoss: 7.90,
+    status: "HIT_TARGET",
+    profit: 7.32,
+    duration: "3 days"
+  },
+  {
+    id: "ALGO-012",
+    pair: "ALGO/USDT",
+    date: new Date(Date.now() - 172800000).toISOString().split('T')[0], // Day before yesterday
+    type: "SHORT",
+    entry: 0.14,
+    target: 0.12,
+    stopLoss: 0.15,
+    status: "HIT_TARGET",
+    profit: 14.29,
+    duration: "5 days"
+  },
+  {
+    id: "NEAR-013",
+    pair: "NEAR/USDT",
+    date: new Date(Date.now() - 172800000).toISOString().split('T')[0], // Day before yesterday
+    type: "LONG",
+    entry: 1.60,
+    target: 1.85,
+    stopLoss: 1.50,
+    status: "HIT_STOP",
+    profit: -6.25,
+    duration: "1 day"
   }
 ];
 
@@ -248,7 +288,7 @@ const BacktestingResults = () => {
         
         <Tabs defaultValue="recent" className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-10 mb-4">
-            <TabsTrigger value="recent">Recent Trades</TabsTrigger>
+            <TabsTrigger value="recent">Today's Trades</TabsTrigger>
             <TabsTrigger value="historical">Historical Data</TabsTrigger>
           </TabsList>
           

@@ -12,6 +12,7 @@ const INITIAL_COUNT = 10000;
 const AnalysisCounter = () => {
   const [totalAnalysis, setTotalAnalysis] = useState(INITIAL_COUNT);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [activeTraders, setActiveTraders] = useState(Math.floor(INITIAL_COUNT / 21));
 
   useEffect(() => {
     // Try to load from localStorage first
@@ -52,8 +53,23 @@ const AnalysisCounter = () => {
       console.error('Error listening to counter updates:', error);
     });
 
-    return () => unsubscribe();
-  }, []);
+    // Set up interval to update active traders count randomly every minute
+    const tradersInterval = setInterval(() => {
+      const baseTraders = Math.floor(totalAnalysis / 21);
+      const randomOffset = Math.floor(Math.random() * 50) - 25; // Random number between -25 and 25
+      setActiveTraders(baseTraders + randomOffset);
+    }, 60000); // Update every minute
+
+    // Initial random active traders calculation
+    const baseTraders = Math.floor(totalAnalysis / 21);
+    const randomOffset = Math.floor(Math.random() * 50) - 25;
+    setActiveTraders(baseTraders + randomOffset);
+
+    return () => {
+      unsubscribe();
+      clearInterval(tradersInterval);
+    };
+  }, [totalAnalysis]);
 
   return (
     <Card className="glass-card w-full animate-fade-in">
@@ -96,7 +112,7 @@ const AnalysisCounter = () => {
             <div>
               <p className="text-muted-foreground text-xs">Active Traders</p>
               <h3 className="text-2xl font-mono font-bold">
-                {Math.floor(totalAnalysis / 21).toLocaleString()}
+                {activeTraders.toLocaleString()}
               </h3>
             </div>
           </div>

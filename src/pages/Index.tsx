@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -314,7 +315,7 @@ const Index = () => {
           <AnalysisCounter />
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
           <div className="lg:col-span-2 animate-fade-in">
             <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
           </div>
@@ -324,11 +325,11 @@ const Index = () => {
           </div>
         </div>
         
-        <div className="mb-6">
+        <div className="mb-10">
           <HowWeWork />
         </div>
         
-        <div className="mb-6">
+        <div className="mb-10">
           <BacktestingResults />
         </div>
         
