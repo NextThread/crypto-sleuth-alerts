@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, LineChart, Microscope, Lock } from "lucide-react";
+import { Lightbulb, Briefcase, LineChart, Microscope, Lock, TrendingUp } from "lucide-react";
 
 const HowWeWork = () => {
   return (
@@ -18,21 +18,21 @@ const HowWeWork = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-4 rounded-lg bg-secondary/20 backdrop-blur-sm border border-white/5 transition-all hover:bg-secondary/30 hover:border-primary/20 hover:shadow-md">
             <div className="rounded-full bg-primary/10 w-12 h-12 flex items-center justify-center mb-4">
-              <Briefcase className="h-6 w-6 text-primary" />
+              <TrendingUp className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="text-lg font-medium mb-2">Advanced Algorithms</h3>
+            <h3 className="text-lg font-medium mb-2">Real-time Chart Analysis</h3>
             <p className="text-muted-foreground text-sm">
-              Our proprietary algorithms analyze market patterns across multiple timeframes to identify high-probability trading opportunities before they become apparent to others.
+              We provide comprehensive draw analysis directly on real-time charts, with support/resistance levels, patterns, and entry/exit points all visualized as they form, giving you an edge others don't have.
             </p>
           </div>
           
           <div className="p-4 rounded-lg bg-secondary/20 backdrop-blur-sm border border-white/5 transition-all hover:bg-secondary/30 hover:border-primary/20 hover:shadow-md">
             <div className="rounded-full bg-primary/10 w-12 h-12 flex items-center justify-center mb-4">
-              <LineChart className="h-6 w-6 text-primary" />
+              <Briefcase className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="text-lg font-medium mb-2">Real-time Analysis</h3>
+            <h3 className="text-lg font-medium mb-2">Advanced Algorithms</h3>
             <p className="text-muted-foreground text-sm">
-              We continuously monitor market conditions and update our analysis in real-time, allowing you to make informed decisions based on the latest data and trends.
+              Our proprietary algorithms analyze market patterns across multiple timeframes to identify high-probability trading opportunities before they become apparent to others.
             </p>
           </div>
           
@@ -53,6 +53,10 @@ const HowWeWork = () => {
             What Makes Us Different
           </h3>
           <ul className="space-y-3 text-sm">
+            <li className="flex items-start gap-2">
+              <span className="text-primary font-bold">•</span>
+              <span><strong>Real-time visual analysis:</strong> We draw directly on charts in real-time, showing you exactly where key levels, patterns, and signals are forming as the market moves.</span>
+            </li>
             <li className="flex items-start gap-2">
               <span className="text-primary font-bold">•</span>
               <span>Unlike others, we don't just offer generic signals - our analysis includes specific entry points, targets, and protective stops.</span>

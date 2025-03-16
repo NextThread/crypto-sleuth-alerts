@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -325,7 +324,7 @@ const Index = () => {
           </div>
         </div>
         
-        <div className="mb-10">
+        <div className="mb-16">
           <HowWeWork />
         </div>
         

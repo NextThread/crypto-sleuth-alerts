@@ -1,8 +1,10 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Layers, History, Dices, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Layers, History, Dices, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 interface BacktestResult {
   id: string;
@@ -15,10 +17,11 @@ interface BacktestResult {
   status: "HIT_TARGET" | "HIT_STOP" | "OPEN";
   profit: number;
   duration: string;
+  currentPrice?: number;
 }
 
 // Today's trades (most recent)
-const recentResults: BacktestResult[] = [
+const recentResultsInit: BacktestResult[] = [
   {
     id: "BTC-001",
     pair: "BTC/USDT",
@@ -94,7 +97,7 @@ const recentResults: BacktestResult[] = [
 ];
 
 // Previous days' trades (historical)
-const historicalResults: BacktestResult[] = [
+const historicalResultsInit: BacktestResult[] = [
   // Yesterday
   {
     id: "DOT-007",
@@ -183,7 +186,106 @@ const historicalResults: BacktestResult[] = [
   }
 ];
 
+const fetchCurrentPrice = async (symbol: string): Promise<number> => {
+  try {
+    // Remove the /USDT part and make it lowercase for API
+    const baseSymbol = symbol.split('/')[0].toLowerCase();
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${baseSymbol}usdt`);
+    const data = await response.json();
+    return parseFloat(data.price);
+  } catch (error) {
+    console.error(`Error fetching price for ${symbol}:`, error);
+    return 0;
+  }
+};
+
 const BacktestingResults = () => {
+  const [recentResults, setRecentResults] = useState<BacktestResult[]>(recentResultsInit);
+  const [historicalResults, setHistoricalResults] = useState<BacktestResult[]>(historicalResultsInit);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Function to update prices
+  const updatePrices = async () => {
+    setIsLoadingPrices(true);
+    
+    try {
+      // Update recent results
+      const updatedRecent = await Promise.all(
+        recentResults.map(async (trade) => {
+          const pair = trade.pair;
+          const currentPrice = await fetchCurrentPrice(pair);
+          
+          // Adjust profit based on current price if trade is OPEN
+          let adjustedProfit = trade.profit;
+          if (trade.status === "OPEN") {
+            if (trade.type === "LONG") {
+              adjustedProfit = ((currentPrice - trade.entry) / trade.entry) * 100;
+            } else {
+              adjustedProfit = ((trade.entry - currentPrice) / trade.entry) * 100;
+            }
+          }
+          
+          return {
+            ...trade,
+            currentPrice,
+            profit: trade.status === "OPEN" ? adjustedProfit : trade.profit
+          };
+        })
+      );
+      
+      // Update historical results
+      const updatedHistorical = await Promise.all(
+        historicalResults.map(async (trade) => {
+          const currentPrice = await fetchCurrentPrice(trade.pair);
+          return {
+            ...trade,
+            currentPrice
+          };
+        })
+      );
+      
+      setRecentResults(updatedRecent);
+      setHistoricalResults(updatedHistorical);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Error updating prices:", error);
+    } finally {
+      setIsLoadingPrices(false);
+    }
+  };
+  
+  // Update prices when component mounts
+  useEffect(() => {
+    updatePrices();
+    
+    // Update prices every 5 minutes
+    const intervalId = setInterval(updatePrices, 5 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Track days to simulate adding new trades to historical data
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const storedDate = localStorage.getItem('lastBacktestingDate');
+    
+    if (storedDate !== today) {
+      // It's a new day, move yesterday's trades to historical
+      if (storedDate) {
+        // Move 5 trades from recent to historical
+        const tradesToMove = recentResults.slice(0, 5).map(trade => ({
+          ...trade,
+          date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // yesterday
+        }));
+        
+        setHistoricalResults(prev => [...tradesToMove, ...prev]);
+      }
+      
+      localStorage.setItem('lastBacktestingDate', today);
+    }
+  }, []);
+
   // Calculate success rate and average profit
   const allResults = [...recentResults, ...historicalResults];
   const successfulTrades = allResults.filter(r => r.status === "HIT_TARGET").length;
@@ -234,11 +336,18 @@ const BacktestingResults = () => {
           <div className="font-mono text-crypto-stop">${trade.stopLoss.toLocaleString()}</div>
         </div>
         
+        {trade.currentPrice ? (
+          <div>
+            <div className="text-xs text-muted-foreground">Current</div>
+            <div className="font-mono">${trade.currentPrice.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+          </div>
+        ) : null}
+        
         <div className="col-span-3 md:col-span-1 mt-2 md:mt-0">
           <div className={`flex items-center gap-1.5 ${
             trade.status === "HIT_TARGET" ? "text-crypto-bullish" : 
             trade.status === "HIT_STOP" ? "text-crypto-bearish" : 
-            "text-muted-foreground"
+            trade.profit >= 0 ? "text-crypto-bullish" : "text-crypto-bearish"
           }`}>
             {trade.status === "HIT_TARGET" ? (
               <ArrowUpRight className="h-4 w-4" />
@@ -257,10 +366,27 @@ const BacktestingResults = () => {
   return (
     <Card className="glass-card w-full animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold flex items-center gap-2">
-          <Layers className="h-5 w-5 text-primary" />
-          Backtesting Results
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <Layers className="h-5 w-5 text-primary" />
+            Backtesting Results
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs h-8" 
+              onClick={updatePrices}
+              disabled={isLoadingPrices}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingPrices ? 'animate-spin' : ''}`} />
+              Update Prices
+            </Button>
+            <div className="text-xs text-muted-foreground">
+              Updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
