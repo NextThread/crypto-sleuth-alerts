@@ -18,6 +18,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, BarChart2, LineChart, TrendingUp, Info, Sparkles } from 'lucide-react';
 import { doc, getDoc, setDoc, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
