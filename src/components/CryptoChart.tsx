@@ -17,6 +17,7 @@ import { PatternControlsState, ChartControlsState } from './ChartControls';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import FullScreenToggle from './FullScreenToggle';
 import 'chart.js/auto';
 
 // Register Chart.js components
@@ -849,11 +850,14 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   }
   
   return (
-    <div className="w-full h-[400px] glass-panel rounded-lg p-4">
+    <div id="crypto-chart-container" className="w-full h-[400px] glass-panel rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{symbol} Chart</h3>
-        <div className="text-xs font-mono text-muted-foreground">
-          Last update: {new Date(chartData[chartData.length - 1].closeTime).toLocaleTimeString()}
+        <div className="flex items-center gap-2">
+          <FullScreenToggle targetId="crypto-chart-container" />
+          <div className="text-xs font-mono text-muted-foreground">
+            Last update: {new Date(chartData[chartData.length - 1]?.closeTime || Date.now()).toLocaleTimeString()}
+          </div>
         </div>
       </div>
       

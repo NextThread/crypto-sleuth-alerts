@@ -1,13 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Send, User, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, User, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '../contexts/AuthContext';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -27,7 +29,9 @@ const CommunityForum = () => {
   const [newPost, setNewPost] = useState("");
   const [postName, setPostName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [permissionError, setPermissionError] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Fetch posts from Firebase
   useEffect(() => {
@@ -41,6 +45,9 @@ const CommunityForum = () => {
       } as ForumPost));
       
       setPosts(fetchedPosts);
+    }, (error) => {
+      console.error("Error fetching posts:", error);
+      setPermissionError(true);
     });
     
     return () => unsubscribe();
@@ -53,23 +60,37 @@ const CommunityForum = () => {
     
     try {
       setIsLoading(true);
+      setPermissionError(false);
       
+      // Using guest ID if user is not logged in
+      const userId = user?.uid || 'guest-' + Math.random().toString(36).substring(2, 15);
       const displayName = postName.trim() || user?.displayName || 'Anonymous';
       
       await addDoc(collection(db, "forumPosts"), {
         text: newPost,
         author: {
-          id: user?.uid || 'guest',
+          id: userId,
           name: displayName,
           photoURL: user?.photoURL || '',
         },
         createdAt: serverTimestamp(),
       });
       
+      toast({
+        title: "Post submitted",
+        description: "Your message has been posted to the community forum",
+      });
+      
       setNewPost("");
       setPostName("");
     } catch (error) {
       console.error("Error adding post:", error);
+      setPermissionError(true);
+      toast({
+        title: "Error posting message",
+        description: "There was a problem submitting your post. Please try again or sign in.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +99,17 @@ const CommunityForum = () => {
   const handleDeletePost = async (postId: string) => {
     try {
       await deleteDoc(doc(db, "forumPosts", postId));
+      toast({
+        title: "Post deleted",
+        description: "Your post has been removed from the forum",
+      });
     } catch (error) {
       console.error("Error deleting post:", error);
+      toast({
+        title: "Error deleting post",
+        description: "There was a problem deleting your post",
+        variant: "destructive",
+      });
     }
   };
   
@@ -109,6 +139,15 @@ const CommunityForum = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {permissionError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Unable to access forum posts. Please sign in to participate in the community forum.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="space-y-4">
           <form onSubmit={handleSubmitPost} className="space-y-3 mb-6">
             <div className="flex items-center gap-2">
@@ -147,7 +186,9 @@ const CommunityForum = () => {
           
           {posts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Be the first to start a conversation!
+              {permissionError 
+                ? "Sign in to view and participate in community discussions" 
+                : "Be the first to start a conversation!"}
             </div>
           ) : (
             <div className="space-y-4">
