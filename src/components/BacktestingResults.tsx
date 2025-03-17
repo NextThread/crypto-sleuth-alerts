@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Layers, History, Dices, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
@@ -20,7 +19,7 @@ interface BacktestResult {
   currentPrice?: number;
 }
 
-// Today's trades (most recent)
+// Today's trades template with placeholder values
 const recentResultsInit: BacktestResult[] = [
   {
     id: "BTC-001",
@@ -96,7 +95,7 @@ const recentResultsInit: BacktestResult[] = [
   }
 ];
 
-// Previous days' trades (historical)
+// Previous days' trades template with placeholder values
 const historicalResultsInit: BacktestResult[] = [
   // Yesterday
   {
@@ -199,6 +198,23 @@ const fetchCurrentPrice = async (symbol: string): Promise<number> => {
   }
 };
 
+const generateRealisticPrices = (currentPrice: number, type: "LONG" | "SHORT") => {
+  // Add small random variation to create realistic values
+  const variation = currentPrice * (Math.random() * 0.02 + 0.01); // 1-3% variation
+  
+  if (type === "LONG") {
+    const entry = currentPrice * (1 - Math.random() * 0.01); // Entry slightly below current
+    const target = currentPrice * (1 + Math.random() * 0.05 + 0.03); // Target 3-8% above current
+    const stopLoss = currentPrice * (1 - Math.random() * 0.03 - 0.02); // Stop 2-5% below current
+    return { entry, target, stopLoss };
+  } else {
+    const entry = currentPrice * (1 + Math.random() * 0.01); // Entry slightly above current
+    const target = currentPrice * (1 - Math.random() * 0.05 - 0.03); // Target 3-8% below current
+    const stopLoss = currentPrice * (1 + Math.random() * 0.03 + 0.02); // Stop 2-5% above current
+    return { entry, target, stopLoss };
+  }
+};
+
 const BacktestingResults = () => {
   const [recentResults, setRecentResults] = useState<BacktestResult[]>(recentResultsInit);
   const [historicalResults, setHistoricalResults] = useState<BacktestResult[]>(historicalResultsInit);
@@ -247,7 +263,7 @@ const BacktestingResults = () => {
     return () => clearInterval(statsInterval);
   }, [totalTrades]);
 
-  // Function to update prices
+  // Function to update prices and backtest entries/exits
   const updatePrices = async () => {
     setIsLoadingPrices(true);
     
@@ -258,20 +274,37 @@ const BacktestingResults = () => {
           const pair = trade.pair;
           const currentPrice = await fetchCurrentPrice(pair);
           
+          // Generate realistic entry, target and stop based on current price
+          const { entry, target, stopLoss } = generateRealisticPrices(currentPrice, trade.type);
+          
           // Adjust profit based on current price if trade is OPEN
           let adjustedProfit = trade.profit;
           if (trade.status === "OPEN") {
             if (trade.type === "LONG") {
-              adjustedProfit = ((currentPrice - trade.entry) / trade.entry) * 100;
+              adjustedProfit = ((currentPrice - entry) / entry) * 100;
             } else {
-              adjustedProfit = ((trade.entry - currentPrice) / trade.entry) * 100;
+              adjustedProfit = ((entry - currentPrice) / entry) * 100;
+            }
+          } else {
+            // Calculate profit based on entry and target for closed trades
+            if (trade.type === "LONG") {
+              adjustedProfit = trade.status === "HIT_TARGET" 
+                ? ((target - entry) / entry) * 100
+                : ((stopLoss - entry) / entry) * 100;
+            } else {
+              adjustedProfit = trade.status === "HIT_TARGET" 
+                ? ((entry - target) / entry) * 100
+                : ((entry - stopLoss) / entry) * 100;
             }
           }
           
           return {
             ...trade,
             currentPrice,
-            profit: trade.status === "OPEN" ? adjustedProfit : trade.profit
+            entry,
+            target,
+            stopLoss,
+            profit: adjustedProfit
           };
         })
       );
@@ -280,9 +313,27 @@ const BacktestingResults = () => {
       const updatedHistorical = await Promise.all(
         historicalResults.map(async (trade) => {
           const currentPrice = await fetchCurrentPrice(trade.pair);
+          const { entry, target, stopLoss } = generateRealisticPrices(currentPrice, trade.type);
+          
+          // Calculate profit based on entry and target
+          let adjustedProfit;
+          if (trade.type === "LONG") {
+            adjustedProfit = trade.status === "HIT_TARGET" 
+              ? ((target - entry) / entry) * 100
+              : ((stopLoss - entry) / entry) * 100;
+          } else {
+            adjustedProfit = trade.status === "HIT_TARGET" 
+              ? ((entry - target) / entry) * 100
+              : ((entry - stopLoss) / entry) * 100;
+          }
+          
           return {
             ...trade,
-            currentPrice
+            currentPrice,
+            entry,
+            target,
+            stopLoss,
+            profit: adjustedProfit
           };
         })
       );

@@ -138,8 +138,8 @@ const TradeDetails = ({ chartData, symbol }: TradeDetailsProps) => {
     
     // More concise indicator summary
     const indicatorSummary = recentTrend === 'bullish'
-      ? `${symbol} showing bullish momentum across multiple timeframes. ${patterns[0]} pattern forming with strong volume confirmation.`
-      : `${symbol} indicating bearish continuation with ${patterns[0]} pattern. Volume profile confirms distribution.`;
+      ? `${symbol.slice(0, -4)} forming ${patterns[0]} with strong momentum indicators. Target: ${formatPrice(adjustedTakeProfit)} (${Math.abs(((adjustedTakeProfit - entryPrice) / entryPrice) * 100).toFixed(2)}% profit). Best timeframe: ${['4H', '1D', '1H'][Math.floor(Math.random() * 3)]}.`
+      : `${symbol.slice(0, -4)} showing ${patterns[0]} pattern with bearish signals. Target: ${formatPrice(adjustedTakeProfit)} (${Math.abs(((adjustedTakeProfit - entryPrice) / entryPrice) * 100).toFixed(2)}% move). Best timeframe: ${['4H', '1D', '1H'][Math.floor(Math.random() * 3)]}.`;
     
     const volatilityAssessment = `${Math.random() > 0.5 ? 'Higher' : 'Lower'} than average volatility (${(10 + Math.random() * 20).toFixed(1)}% ATR)`;
     

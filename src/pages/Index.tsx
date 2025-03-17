@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -17,10 +18,11 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, BarChart2, LineChart, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BarChart2, LineChart, TrendingUp, Info, Sparkles } from 'lucide-react';
 import { doc, getDoc, setDoc, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import CommunityForum from '../components/CommunityForum';
 
 const INTERVALS: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
@@ -251,6 +253,26 @@ const Index = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
+        {/* Platform Introduction */}
+        <div className="mb-8 px-4 py-6 rounded-lg glass-panel animate-fade-in">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold">Welcome to ChartPulse</h1>
+          </div>
+          <p className="text-muted-foreground mb-4">
+            ChartPulse is an advanced crypto analysis platform that combines real-time data with AI-powered insights. 
+            Our platform uniquely offers <span className="text-primary font-medium">full-scale drawing analysis directly on real-time price charts</span>, 
+            helping traders identify key patterns and market structures as they form. Analyze trends, set price alerts, 
+            and make informed trading decisions with our comprehensive technical indicators and pattern recognition.
+          </p>
+          <div className="flex gap-2 text-sm">
+            <Badge variant="outline" className="bg-secondary/20 text-primary">Real-time Analysis</Badge>
+            <Badge variant="outline" className="bg-secondary/20 text-primary">AI-Powered Insights</Badge>
+            <Badge variant="outline" className="bg-secondary/20 text-primary">Pattern Recognition</Badge>
+            <Badge variant="outline" className="bg-secondary/20 text-primary">Full Chart Drawing</Badge>
+          </div>
+        </div>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
           <div>
             <h1 className="text-2xl font-bold animate-fade-in flex items-center gap-2">
@@ -338,6 +360,10 @@ const Index = () => {
         
         <div className="animate-fade-in animation-delay-600 mb-16 pt-4">
           <CryptoNews initialExpandedCount={6} />
+        </div>
+
+        <div className="animate-fade-in mb-16 pt-4">
+          <CommunityForum />
         </div>
       </div>
     </Layout>
