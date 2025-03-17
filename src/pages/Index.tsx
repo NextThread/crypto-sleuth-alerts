@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -329,18 +328,16 @@ const Index = () => {
           <TradeDetails chartData={chartData} symbol={symbol} />
         </div>
         
-        <div className="mb-16">
+        <div className="mb-16 pt-4">
           <HowWeWork />
         </div>
         
-        <div className="mb-16">
+        <div className="mb-16 pt-4">
           <BacktestingResults />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="md:col-span-2 animate-fade-in animation-delay-600">
-            <CryptoNews />
-          </div>
+        <div className="animate-fade-in animation-delay-600 mb-16 pt-4">
+          <CryptoNews initialExpandedCount={6} />
         </div>
       </div>
     </Layout>

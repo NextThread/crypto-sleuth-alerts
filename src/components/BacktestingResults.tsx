@@ -188,9 +188,9 @@ const historicalResultsInit: BacktestResult[] = [
 
 const fetchCurrentPrice = async (symbol: string): Promise<number> => {
   try {
-    // Remove the /USDT part and make it lowercase for API
-    const baseSymbol = symbol.split('/')[0].toLowerCase();
-    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${baseSymbol}usdt`);
+    // Remove the /USDT part and make it lowercase for the API
+    const baseSymbol = symbol.split('/')[0].toUpperCase();
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${baseSymbol}USDT`);
     const data = await response.json();
     return parseFloat(data.price);
   } catch (error) {
