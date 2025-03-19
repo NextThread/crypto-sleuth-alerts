@@ -1,3 +1,4 @@
+
 import { TimeInterval } from '../services/binanceService';
 
 export const formatTimeLabel = (timestamp: number, interval: TimeInterval): string => {
@@ -132,5 +133,64 @@ const getTimeUnit = (interval: TimeInterval) => {
       return 'month';
     default:
       return 'day';
+  }
+};
+
+// Add the missing utility functions
+export const formatPrice = (price: string | number): string => {
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+  
+  if (numPrice >= 1000) {
+    return numPrice.toLocaleString('en-US', { 
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2 
+    });
+  } else if (numPrice >= 1) {
+    return numPrice.toLocaleString('en-US', { 
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4 
+    });
+  } else if (numPrice >= 0.01) {
+    return numPrice.toLocaleString('en-US', { 
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 6 
+    });
+  } else {
+    return numPrice.toLocaleString('en-US', { 
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 8 
+    });
+  }
+};
+
+export const formatPriceChange = (change: number | string): string => {
+  const numChange = typeof change === 'string' ? parseFloat(change) : change;
+  const sign = numChange >= 0 ? '+' : '';
+  return `${sign}${numChange.toFixed(2)}%`;
+};
+
+export const formatVolume = (volume: string | number): string => {
+  const numVolume = typeof volume === 'string' ? parseFloat(volume) : volume;
+  
+  if (numVolume >= 1_000_000_000) {
+    return `${(numVolume / 1_000_000_000).toFixed(2)}B`;
+  } else if (numVolume >= 1_000_000) {
+    return `${(numVolume / 1_000_000).toFixed(2)}M`;
+  } else if (numVolume >= 1_000) {
+    return `${(numVolume / 1_000).toFixed(2)}K`;
+  } else {
+    return numVolume.toFixed(2);
+  }
+};
+
+export const getColorClass = (value: number | string): string => {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (numValue > 0) {
+    return 'text-crypto-bullish';
+  } else if (numValue < 0) {
+    return 'text-crypto-bearish';
+  } else {
+    return 'text-muted-foreground';
   }
 };
