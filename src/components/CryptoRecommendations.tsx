@@ -3,7 +3,14 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TrendingUp, TrendingDown, AlertCircle, Gem, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, Gem, Clock, ExternalLink } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+
+interface NewsItem {
+  title: string;
+  url: string;
+  source: string;
+}
 
 interface CryptoRecommendation {
   symbol: string;
@@ -17,6 +24,7 @@ interface CryptoRecommendation {
   stopLoss?: number;
   catalyst: string;
   lastUpdated: Date;
+  relatedNews?: NewsItem[];
 }
 
 const MOCK_RECOMMENDATIONS: CryptoRecommendation[] = [
@@ -31,7 +39,19 @@ const MOCK_RECOMMENDATIONS: CryptoRecommendation[] = [
     priceTarget: 78500.00,
     stopLoss: 67800.00,
     catalyst: 'ETF inflows acceleration and institutional adoption',
-    lastUpdated: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+    lastUpdated: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    relatedNews: [
+      {
+        title: 'Bitcoin ETFs see record $1.1 billion inflows in a single day',
+        url: 'https://www.coindesk.com/markets/2023/07/bitcoin-etfs-record-inflows',
+        source: 'CoinDesk'
+      },
+      {
+        title: 'MicroStrategy adds another $750M in Bitcoin to balance sheet',
+        url: 'https://www.bloomberg.com/crypto/microstrategy-bitcoin-purchase',
+        source: 'Bloomberg'
+      }
+    ]
   },
   {
     symbol: 'ETHUSDT',
@@ -44,7 +64,14 @@ const MOCK_RECOMMENDATIONS: CryptoRecommendation[] = [
     priceTarget: 4200.00,
     stopLoss: 3650.00,
     catalyst: 'Upcoming protocol upgrade and increased staking activity',
-    lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000) // 4 hours ago
+    lastUpdated: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+    relatedNews: [
+      {
+        title: 'Ethereum Dencun upgrade date confirmed by core developers',
+        url: 'https://cointelegraph.com/news/ethereum-dencun-upgrade-date',
+        source: 'CoinTelegraph'
+      }
+    ]
   },
   {
     symbol: 'SOLUSDT',
@@ -56,7 +83,14 @@ const MOCK_RECOMMENDATIONS: CryptoRecommendation[] = [
     price: 145.75,
     priceTarget: 160.00,
     catalyst: 'DeFi and NFT ecosystem growth on Solana',
-    lastUpdated: new Date(Date.now() - 8 * 60 * 60 * 1000) // 8 hours ago
+    lastUpdated: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+    relatedNews: [
+      {
+        title: 'Solana TVL reaches new all-time high as DeFi activity surges',
+        url: 'https://defillama.com/solana-tvl-reaches-new-heights',
+        source: 'DeFi Llama'
+      }
+    ]
   },
   {
     symbol: 'DOGEUSDT',
@@ -68,7 +102,14 @@ const MOCK_RECOMMENDATIONS: CryptoRecommendation[] = [
     price: 0.175,
     priceTarget: 0.145,
     catalyst: 'Decreasing social media engagement and memecoin rotation',
-    lastUpdated: new Date(Date.now() - 12 * 60 * 60 * 1000) // 12 hours ago
+    lastUpdated: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+    relatedNews: [
+      {
+        title: 'Memecoins lose steam as market focus shifts to utility tokens',
+        url: 'https://www.theblock.co/post/memecoin-interest-declining',
+        source: 'The Block'
+      }
+    ]
   },
   {
     symbol: 'BNBUSDT',
@@ -81,7 +122,14 @@ const MOCK_RECOMMENDATIONS: CryptoRecommendation[] = [
     priceTarget: 650.00,
     stopLoss: 580.00,
     catalyst: 'Token burn event and ecosystem expansion',
-    lastUpdated: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
+    lastUpdated: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+    relatedNews: [
+      {
+        title: 'Binance completes 21st quarterly BNB burn, removing $409M worth of tokens',
+        url: 'https://binance.com/en/blog/community/bnb-burn-q1-2023',
+        source: 'Binance Blog'
+      }
+    ]
   }
 ];
 
@@ -193,6 +241,28 @@ const CryptoRecommendations = () => {
                     <p className="font-mono font-medium">${rec.priceTarget.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                   </div>
                 </div>
+                
+                {/* Related News Links */}
+                {rec.relatedNews && rec.relatedNews.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="text-xs font-medium mb-1 text-muted-foreground">Related News:</h4>
+                    <div className="space-y-1">
+                      {rec.relatedNews.map((news, idx) => (
+                        <a 
+                          key={idx}
+                          href={news.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          <span className="line-clamp-1">{news.title}</span>
+                          <span className="text-muted-foreground">({news.source})</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-1">

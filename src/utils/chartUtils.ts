@@ -136,6 +136,15 @@ const getTimeUnit = (interval: TimeInterval) => {
   }
 };
 
+// Get colors for candlestick chart
+export const getCandlestickColors = (theme: 'light' | 'dark' = 'light') => {
+  return {
+    bullColor: '#22c55e', // Green for bullish candles
+    bearColor: '#ef4444', // Red for bearish candles
+    wickColor: theme === 'dark' ? '#64748b' : '#94a3b8'
+  };
+};
+
 // Add the missing utility functions
 export const formatPrice = (price: string | number): string => {
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;

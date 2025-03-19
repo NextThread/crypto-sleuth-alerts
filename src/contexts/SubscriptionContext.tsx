@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +27,7 @@ interface SubscriptionContextType {
   isVerifyingPayment: boolean;
 }
 
-const DEFAULT_SEARCH_LIMIT = 3;
+const DEFAULT_SEARCH_LIMIT = 3; // Total limit of 3 searches (not per day)
 const SOLANA_RECIPIENT_ADDRESS = "HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu";
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
