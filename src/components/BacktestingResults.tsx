@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Layers, History, Dices, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Layers, History, Dices, ArrowUpRight, ArrowDownRight, RefreshCw, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { useSubscription } from "../contexts/SubscriptionContext";
+import { useNavigate } from "react-router-dom";
 
 interface BacktestResult {
   id: string;
@@ -19,12 +21,11 @@ interface BacktestResult {
   currentPrice?: number;
 }
 
-// Today's trades template with placeholder values
 const recentResultsInit: BacktestResult[] = [
   {
     id: "BTC-001",
     pair: "BTC/USDT",
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     type: "LONG",
     entry: 25800,
     target: 28500,
@@ -36,7 +37,7 @@ const recentResultsInit: BacktestResult[] = [
   {
     id: "ETH-002",
     pair: "ETH/USDT",
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     type: "LONG",
     entry: 1850,
     target: 1950,
@@ -48,7 +49,7 @@ const recentResultsInit: BacktestResult[] = [
   {
     id: "SOL-003",
     pair: "SOL/USDT",
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     type: "SHORT",
     entry: 28.50,
     target: 24.20,
@@ -60,7 +61,7 @@ const recentResultsInit: BacktestResult[] = [
   {
     id: "ADA-004",
     pair: "ADA/USDT",
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     type: "LONG",
     entry: 0.28,
     target: 0.32,
@@ -72,7 +73,7 @@ const recentResultsInit: BacktestResult[] = [
   {
     id: "XRP-005",
     pair: "XRP/USDT",
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     type: "SHORT",
     entry: 0.82,
     target: 0.72,
@@ -84,7 +85,7 @@ const recentResultsInit: BacktestResult[] = [
   {
     id: "BNB-006",
     pair: "BNB/USDT",
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     type: "LONG",
     entry: 240,
     target: 260,
@@ -95,13 +96,11 @@ const recentResultsInit: BacktestResult[] = [
   }
 ];
 
-// Previous days' trades template with placeholder values
 const historicalResultsInit: BacktestResult[] = [
-  // Yesterday
   {
     id: "DOT-007",
     pair: "DOT/USDT",
-    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
     type: "LONG",
     entry: 5.60,
     target: 6.20,
@@ -113,7 +112,7 @@ const historicalResultsInit: BacktestResult[] = [
   {
     id: "LINK-008",
     pair: "LINK/USDT",
-    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
     type: "SHORT",
     entry: 7.80,
     target: 6.90,
@@ -125,7 +124,7 @@ const historicalResultsInit: BacktestResult[] = [
   {
     id: "MATIC-009",
     pair: "MATIC/USDT",
-    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
     type: "LONG",
     entry: 0.85,
     target: 0.95,
@@ -137,7 +136,7 @@ const historicalResultsInit: BacktestResult[] = [
   {
     id: "AVAX-010",
     pair: "AVAX/USDT",
-    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
     type: "SHORT",
     entry: 15.20,
     target: 13.50,
@@ -146,11 +145,10 @@ const historicalResultsInit: BacktestResult[] = [
     profit: 11.18,
     duration: "4 days"
   },
-  // Day before yesterday
   {
     id: "ATOM-011",
     pair: "ATOM/USDT",
-    date: new Date(Date.now() - 172800000).toISOString().split('T')[0], // Day before yesterday
+    date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
     type: "LONG",
     entry: 8.20,
     target: 8.80,
@@ -162,7 +160,7 @@ const historicalResultsInit: BacktestResult[] = [
   {
     id: "ALGO-012",
     pair: "ALGO/USDT",
-    date: new Date(Date.now() - 172800000).toISOString().split('T')[0], // Day before yesterday
+    date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
     type: "SHORT",
     entry: 0.14,
     target: 0.12,
@@ -174,7 +172,7 @@ const historicalResultsInit: BacktestResult[] = [
   {
     id: "NEAR-013",
     pair: "NEAR/USDT",
-    date: new Date(Date.now() - 172800000).toISOString().split('T')[0], // Day before yesterday
+    date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
     type: "LONG",
     entry: 1.60,
     target: 1.85,
@@ -187,7 +185,6 @@ const historicalResultsInit: BacktestResult[] = [
 
 const fetchCurrentPrice = async (symbol: string): Promise<number> => {
   try {
-    // Remove the /USDT part and make it lowercase for the API
     const baseSymbol = symbol.split('/')[0].toUpperCase();
     const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${baseSymbol}USDT`);
     const data = await response.json();
@@ -199,18 +196,17 @@ const fetchCurrentPrice = async (symbol: string): Promise<number> => {
 };
 
 const generateRealisticPrices = (currentPrice: number, type: "LONG" | "SHORT") => {
-  // Add small random variation to create realistic values
-  const variation = currentPrice * (Math.random() * 0.02 + 0.01); // 1-3% variation
+  const variation = currentPrice * (Math.random() * 0.02 + 0.01);
   
   if (type === "LONG") {
-    const entry = currentPrice * (1 - Math.random() * 0.01); // Entry slightly below current
-    const target = currentPrice * (1 + Math.random() * 0.05 + 0.03); // Target 3-8% above current
-    const stopLoss = currentPrice * (1 - Math.random() * 0.03 - 0.02); // Stop 2-5% below current
+    const entry = currentPrice * (1 - Math.random() * 0.01);
+    const target = currentPrice * (1 + Math.random() * 0.05 + 0.03);
+    const stopLoss = currentPrice * (1 - Math.random() * 0.03 - 0.02);
     return { entry, target, stopLoss };
   } else {
-    const entry = currentPrice * (1 + Math.random() * 0.01); // Entry slightly above current
-    const target = currentPrice * (1 - Math.random() * 0.05 - 0.03); // Target 3-8% below current
-    const stopLoss = currentPrice * (1 + Math.random() * 0.03 + 0.02); // Stop 2-5% above current
+    const entry = currentPrice * (1 + Math.random() * 0.01);
+    const target = currentPrice * (1 - Math.random() * 0.05 - 0.03);
+    const stopLoss = currentPrice * (1 + Math.random() * 0.03 + 0.02);
     return { entry, target, stopLoss };
   }
 };
@@ -221,13 +217,18 @@ const BacktestingResults = () => {
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
-  // Stats state with random changes
   const [successRate, setSuccessRate] = useState<number>(85);
   const [averageProfit, setAverageProfit] = useState<number>(8.5);
   const [totalTrades, setTotalTrades] = useState<number>(100);
   
+  const [activeTab, setActiveTab] = useState<string>("recent");
+  const { currentSubscription } = useSubscription();
+  const navigate = useNavigate();
+  
+  const isPremiumUser = currentSubscription.planId !== null && 
+    ['half_yearly', 'yearly'].includes(currentSubscription.planId);
+  
   useEffect(() => {
-    // Initialize total trades from localStorage or default to 100
     const storedTotalTrades = localStorage.getItem('backtestingTotalTrades');
     if (storedTotalTrades) {
       setTotalTrades(parseInt(storedTotalTrades, 10));
@@ -235,49 +236,39 @@ const BacktestingResults = () => {
       localStorage.setItem('backtestingTotalTrades', totalTrades.toString());
     }
     
-    // Check last update date
     const today = new Date().toISOString().split('T')[0];
     const lastUpdateDate = localStorage.getItem('backtestingLastUpdateDate');
     
     if (lastUpdateDate !== today) {
-      // It's a new day, increase total trades
-      const increase = Math.floor(Math.random() * 6) + 10; // Random number between 10-15
+      const increase = Math.floor(Math.random() * 6) + 10;
       const newTotal = totalTrades + increase;
       setTotalTrades(newTotal);
       localStorage.setItem('backtestingTotalTrades', newTotal.toString());
       localStorage.setItem('backtestingLastUpdateDate', today);
     }
     
-    // Update stats randomly every minute
     const updateStats = () => {
-      // Random success rate between 78% and 98%
       setSuccessRate(Math.floor(Math.random() * 21) + 78);
-      
-      // Random average profit between 4% and 36%
       setAverageProfit(Math.random() * 32 + 4);
     };
     
-    updateStats(); // Initial update
-    const statsInterval = setInterval(updateStats, 60000); // Update every minute
+    updateStats();
+    const statsInterval = setInterval(updateStats, 60000);
     
     return () => clearInterval(statsInterval);
   }, [totalTrades]);
 
-  // Function to update prices and backtest entries/exits
   const updatePrices = async () => {
     setIsLoadingPrices(true);
     
     try {
-      // Update recent results
       const updatedRecent = await Promise.all(
         recentResults.map(async (trade) => {
           const pair = trade.pair;
           const currentPrice = await fetchCurrentPrice(pair);
           
-          // Generate realistic entry, target and stop based on current price
           const { entry, target, stopLoss } = generateRealisticPrices(currentPrice, trade.type);
           
-          // Adjust profit based on current price if trade is OPEN
           let adjustedProfit = trade.profit;
           if (trade.status === "OPEN") {
             if (trade.type === "LONG") {
@@ -286,7 +277,6 @@ const BacktestingResults = () => {
               adjustedProfit = ((entry - currentPrice) / entry) * 100;
             }
           } else {
-            // Calculate profit based on entry and target for closed trades
             if (trade.type === "LONG") {
               adjustedProfit = trade.status === "HIT_TARGET" 
                 ? ((target - entry) / entry) * 100
@@ -309,13 +299,11 @@ const BacktestingResults = () => {
         })
       );
       
-      // Update historical results
       const updatedHistorical = await Promise.all(
         historicalResults.map(async (trade) => {
           const currentPrice = await fetchCurrentPrice(trade.pair);
           const { entry, target, stopLoss } = generateRealisticPrices(currentPrice, trade.type);
           
-          // Calculate profit based on entry and target
           let adjustedProfit;
           if (trade.type === "LONG") {
             adjustedProfit = trade.status === "HIT_TARGET" 
@@ -348,28 +336,23 @@ const BacktestingResults = () => {
     }
   };
   
-  // Update prices when component mounts
   useEffect(() => {
     updatePrices();
     
-    // Update prices every 5 minutes
     const intervalId = setInterval(updatePrices, 5 * 60 * 1000);
     
     return () => clearInterval(intervalId);
   }, []);
 
-  // Track days to simulate adding new trades to historical data
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     const storedDate = localStorage.getItem('lastBacktestingDate');
     
     if (storedDate !== today) {
-      // It's a new day, move yesterday's trades to historical
       if (storedDate) {
-        // Move 5 trades from recent to historical
         const tradesToMove = recentResults.slice(0, 5).map(trade => ({
           ...trade,
-          date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // yesterday
+          date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
         }));
         
         setHistoricalResults(prev => [...tradesToMove, ...prev]);
@@ -378,6 +361,10 @@ const BacktestingResults = () => {
       localStorage.setItem('lastBacktestingDate', today);
     }
   }, []);
+
+  const handleUpgradeClick = () => {
+    navigate('/subscription');
+  };
 
   const renderTradeRow = (trade: BacktestResult) => (
     <div 
@@ -499,10 +486,17 @@ const BacktestingResults = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="recent" className="w-full">
+        <Tabs defaultValue="recent" className="w-full" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-2 h-10 mb-4">
             <TabsTrigger value="recent">Today's Trades</TabsTrigger>
-            <TabsTrigger value="historical">Historical Data</TabsTrigger>
+            <TabsTrigger 
+              value="historical" 
+              disabled={!isPremiumUser}
+              className={!isPremiumUser ? 'flex items-center gap-1' : ''}
+            >
+              Historical Data
+              {!isPremiumUser && <Lock className="h-3 w-3 ml-1" />}
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="recent" className="mt-0">
@@ -512,9 +506,22 @@ const BacktestingResults = () => {
           </TabsContent>
           
           <TabsContent value="historical" className="mt-0">
-            <div className="rounded-lg border border-white/10 overflow-hidden">
-              {historicalResults.map(renderTradeRow)}
-            </div>
+            {isPremiumUser ? (
+              <div className="rounded-lg border border-white/10 overflow-hidden">
+                {historicalResults.map(renderTradeRow)}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center border border-white/10 rounded-lg bg-secondary/5">
+                <Lock className="h-12 w-12 text-primary mb-3 animate-pulse" />
+                <h3 className="text-lg font-medium mb-2">Premium Feature</h3>
+                <p className="text-muted-foreground max-w-md mb-4">
+                  Historical backtesting data is available exclusively for half-yearly and annual subscribers.
+                </p>
+                <Button onClick={handleUpgradeClick} className="bg-primary hover:bg-primary/90">
+                  Upgrade to Premium
+                </Button>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -523,3 +530,4 @@ const BacktestingResults = () => {
 };
 
 export default BacktestingResults;
+

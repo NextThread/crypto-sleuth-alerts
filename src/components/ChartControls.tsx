@@ -18,8 +18,13 @@ import {
   ChevronRight,
   ChevronDown,
   Triangle,
-  Check
+  Check,
+  Lock
 } from 'lucide-react';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface ChartControlsProps {
   onControlsChange: (controls: ChartControlsState) => void;
@@ -61,6 +66,10 @@ const defaultControls: ChartControlsState = {
 };
 
 const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
+  const { currentSubscription } = useSubscription();
+  const isPremiumUser = currentSubscription.planId !== null;
+  const navigate = useNavigate();
+
   // Initialize controls from localStorage or use defaults
   const [controls, setControls] = useState<ChartControlsState>(() => {
     try {
@@ -83,6 +92,11 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
 
   // Handle control changes and save to localStorage
   const handleControlChange = (key: keyof ChartControlsState, value: any) => {
+    // If trying to set candlestick chart but not premium, show upgrade prompt
+    if (key === 'chartType' && value === 'candlestick' && !isPremiumUser) {
+      return;
+    }
+    
     const newControls = { ...controls, [key]: value };
     setControls(newControls);
     localStorage.setItem('chartControls', JSON.stringify(newControls));
@@ -103,6 +117,10 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
     onControlsChange(controls);
   }, []);
 
+  const handleUpgradeClick = () => {
+    navigate('/subscription');
+  };
+
   return (
     <div className="glass-panel rounded-lg p-4 animate-fade-in">
       <h3 className="text-sm font-medium mb-3">Chart Controls</h3>
@@ -120,10 +138,34 @@ const ChartControls = ({ onControlsChange }: ChartControlsProps) => {
               <LineChart className="h-4 w-4" />
               <span>Line</span>
             </ToggleGroupItem>
-            <ToggleGroupItem value="candlestick" className="flex items-center gap-1 data-[state=on]:bg-primary/20 data-[state=on]:text-primary">
-              <CandlestickChart className="h-4 w-4" />
-              <span>Candlestick</span>
-            </ToggleGroupItem>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <ToggleGroupItem 
+                      value="candlestick" 
+                      className={`flex items-center gap-1 data-[state=on]:bg-primary/20 data-[state=on]:text-primary ${!isPremiumUser ? 'opacity-60' : ''}`}
+                      disabled={!isPremiumUser}
+                      onClick={(e) => {
+                        if (!isPremiumUser) {
+                          e.preventDefault();
+                          handleUpgradeClick();
+                        }
+                      }}
+                    >
+                      <CandlestickChart className="h-4 w-4" />
+                      <span>Candlestick</span>
+                      {!isPremiumUser && <Lock className="h-3 w-3 ml-1" />}
+                    </ToggleGroupItem>
+                  </div>
+                </TooltipTrigger>
+                {!isPremiumUser && (
+                  <TooltipContent>
+                    <p className="text-xs">Premium feature - Subscribe to unlock</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </ToggleGroup>
         </div>
       </div>

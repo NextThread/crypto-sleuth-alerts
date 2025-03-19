@@ -11,6 +11,11 @@ export interface Plan {
   duration: string;
   searchLimit: number;
   features: string[];
+  premiumFeatures: {
+    candlestickCharts: boolean;
+    historicalBacktesting: boolean;
+    allFeatures: boolean;
+  };
 }
 
 export interface UserSubscription {
@@ -23,12 +28,13 @@ interface SubscriptionContextType {
   plans: Plan[];
   currentSubscription: UserSubscription;
   decrementSearches: () => void;
-  verifyPayment: (txId: string, planId: string) => Promise<boolean>;
+  verifyPayment: (txId: string, planId: string, paymentMethod: 'solana' | 'ethereum') => Promise<boolean>;
   isVerifyingPayment: boolean;
 }
 
 const DEFAULT_SEARCH_LIMIT = 3; // Total limit of 3 searches (not per day)
 const SOLANA_RECIPIENT_ADDRESS = "HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu";
+const ETHEREUM_RECIPIENT_ADDRESS = "0x55D35544369F05D3E5B62c47559de3f4DAc337c6";
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
   {
@@ -37,7 +43,16 @@ export const SUBSCRIPTION_PLANS: Plan[] = [
     price: 1,
     duration: '1 week',
     searchLimit: 50,
-    features: ['Unlimited Chart Access', 'Basic Technical Analysis', 'Email Support']
+    features: [
+      'Unlimited Chart Access', 
+      'Basic Technical Analysis', 
+      'Email Support'
+    ],
+    premiumFeatures: {
+      candlestickCharts: false,
+      historicalBacktesting: false,
+      allFeatures: false
+    }
   },
   {
     id: 'monthly',
@@ -45,7 +60,17 @@ export const SUBSCRIPTION_PLANS: Plan[] = [
     price: 3,
     duration: '1 month',
     searchLimit: 250,
-    features: ['All Weekly Pass Features', 'Advanced Technical Indicators', 'Priority Support']
+    features: [
+      'All Weekly Pass Features', 
+      'Advanced Technical Indicators', 
+      'Priority Support',
+      'Candlestick Charts',
+    ],
+    premiumFeatures: {
+      candlestickCharts: true,
+      historicalBacktesting: false,
+      allFeatures: false
+    }
   },
   {
     id: 'half_yearly',
@@ -53,7 +78,18 @@ export const SUBSCRIPTION_PLANS: Plan[] = [
     price: 9,
     duration: '6 months',
     searchLimit: 2000,
-    features: ['All Monthly Pro Features', 'Trading Pattern Recognition', 'Portfolio Tracking']
+    features: [
+      'All Monthly Pro Features', 
+      'Trading Pattern Recognition', 
+      'Portfolio Tracking',
+      'Historical Backtesting Data',
+      'Advanced Chart Analysis'
+    ],
+    premiumFeatures: {
+      candlestickCharts: true,
+      historicalBacktesting: true,
+      allFeatures: true
+    }
   },
   {
     id: 'yearly',
@@ -61,7 +97,17 @@ export const SUBSCRIPTION_PLANS: Plan[] = [
     price: 15,
     duration: '1 year',
     searchLimit: 5000,
-    features: ['All Half-Year Trader Features', 'AI Market Predictions', 'One-on-One Consultation']
+    features: [
+      'All Half-Year Trader Features', 
+      'AI Market Predictions', 
+      'One-on-One Consultation',
+      'Priority Feature Updates'
+    ],
+    premiumFeatures: {
+      candlestickCharts: true,
+      historicalBacktesting: true,
+      allFeatures: true
+    }
   }
 ];
 
@@ -152,7 +198,24 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const verifyPayment = async (txId: string, planId: string): Promise<boolean> => {
+  // Helper to verify Ethereum transactions - this would be implemented with web3 in a real app
+  const verifyEthereumTransaction = async (txId: string, expectedAmount: number, recipientAddress: string) => {
+    // In a real implementation, this would use ethers.js or web3.js to verify the transaction
+    // For demo purposes, we'll simulate a successful verification
+    console.log(`Verifying Ethereum transaction: ${txId} for ${expectedAmount} ETH to ${recipientAddress}`);
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock successful verification
+    return {
+      isValid: true,
+      message: "Transaction verified successfully",
+      txLink: `https://etherscan.io/tx/${txId}`
+    };
+  };
+
+  const verifyPayment = async (txId: string, planId: string, paymentMethod: 'solana' | 'ethereum'): Promise<boolean> => {
     setIsVerifyingPayment(true);
     
     try {
@@ -162,11 +225,21 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("Invalid plan selected");
       }
       
-      const verification = await verifySolanaTransaction(
-        txId, 
-        selectedPlan.price,
-        SOLANA_RECIPIENT_ADDRESS
-      );
+      let verification;
+      
+      if (paymentMethod === 'solana') {
+        verification = await verifySolanaTransaction(
+          txId, 
+          selectedPlan.price,
+          SOLANA_RECIPIENT_ADDRESS
+        );
+      } else {
+        verification = await verifyEthereumTransaction(
+          txId, 
+          selectedPlan.price,
+          ETHEREUM_RECIPIENT_ADDRESS
+        );
+      }
       
       if (verification.isValid) {
         let expiresAt = new Date();
@@ -200,7 +273,9 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         });
         
         if (txId.length > 20) {
-          console.info("View transaction on Solscan:", getSolscanTransactionLink(txId));
+          console.info("View transaction:", paymentMethod === 'solana' 
+            ? getSolscanTransactionLink(txId)
+            : `https://etherscan.io/tx/${txId}`);
         }
         
         return false;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -320,10 +321,6 @@ const Index = () => {
           <AnalysisCounter />
         </div>
         
-        <div className="mb-8">
-          <CryptoRecommendations />
-        </div>
-        
         <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-4 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600 shadow-md">
           {INTERVALS.map((item) => (
             <button
@@ -361,6 +358,10 @@ const Index = () => {
         
         <div className="mb-16 pt-4">
           <BacktestingResults />
+        </div>
+        
+        <div className="mb-16 pt-4">
+          <CryptoRecommendations />
         </div>
         
         <div className="animate-fade-in animation-delay-600 mb-16 pt-4">

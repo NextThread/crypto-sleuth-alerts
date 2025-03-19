@@ -11,6 +11,8 @@ import { Check, X, ExternalLink, AlertCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getSolscanTransactionLink } from '../utils/solanaUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from "@/components/ui/badge";
 
 const Subscription = () => {
   const { plans, verifyPayment, isVerifyingPayment, currentSubscription } = useSubscription();
@@ -21,6 +23,7 @@ const Subscription = () => {
   const [transactionId, setTransactionId] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [verificationAttempted, setVerificationAttempted] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'ethereum'>('solana');
 
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -43,14 +46,14 @@ const Subscription = () => {
     if (!transactionId.trim()) {
       toast({
         title: "Transaction ID Required",
-        description: "Please enter your Solana transaction ID",
+        description: "Please enter your transaction ID",
         variant: "destructive",
       });
       return;
     }
     
     setVerificationAttempted(true);
-    const success = await verifyPayment(transactionId, selectedPlan.id);
+    const success = await verifyPayment(transactionId, selectedPlan.id, paymentMethod);
     
     if (success) {
       setShowPaymentForm(false);
@@ -59,6 +62,21 @@ const Subscription = () => {
       navigate('/');
     }
   };
+
+  const renderFeatureList = (plan: Plan) => (
+    <ul className="mb-6 flex-grow space-y-2">
+      <li className="flex items-center">
+        <Check className="h-4 w-4 text-green-500 mr-2" />
+        <span>{plan.searchLimit} Crypto Searches</span>
+      </li>
+      {plan.features.map((feature, idx) => (
+        <li key={idx} className="flex items-center">
+          <Check className="h-4 w-4 text-green-500 mr-2" />
+          <span>{feature}</span>
+        </li>
+      ))}
+    </ul>
+  );
 
   if (!user) {
     return (
@@ -120,18 +138,25 @@ const Subscription = () => {
                   </div>
                 </div>
 
-                <ul className="mb-6 flex-grow space-y-2">
-                  <li className="flex items-center">
-                    <Check className="h-4 w-4 text-green-500 mr-2" />
-                    <span>{plan.searchLimit} Crypto Searches</span>
-                  </li>
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                {renderFeatureList(plan)}
+
+                <div className="mb-4 space-y-1">
+                  <h4 className="text-sm font-medium">Premium Features:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant={plan.premiumFeatures.candlestickCharts ? "default" : "outline"} 
+                      className={!plan.premiumFeatures.candlestickCharts ? "opacity-50" : ""}>
+                      Candlestick Charts
+                    </Badge>
+                    <Badge variant={plan.premiumFeatures.historicalBacktesting ? "default" : "outline"}
+                      className={!plan.premiumFeatures.historicalBacktesting ? "opacity-50" : ""}>
+                      Historical Backtesting
+                    </Badge>
+                    <Badge variant={plan.premiumFeatures.allFeatures ? "default" : "outline"}
+                      className={!plan.premiumFeatures.allFeatures ? "opacity-50" : ""}>
+                      All Premium Features
+                    </Badge>
+                  </div>
+                </div>
 
                 <Button 
                   variant={currentSubscription.planId === plan.id ? "secondary" : "default"}
@@ -156,43 +181,73 @@ const Subscription = () => {
               <Alert className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Your transaction will be verified through Solscan. Make sure to complete the payment and copy the transaction ID correctly.
+                  Your transaction will be verified through {paymentMethod === 'solana' ? 'Solscan' : 'Etherscan'}. 
+                  Make sure to complete the payment and copy the transaction ID correctly.
                 </AlertDescription>
               </Alert>
 
-              <div className="space-y-4 mb-6">
-                <h3 className="font-medium">Payment Instructions:</h3>
-                <ol className="list-decimal pl-5 space-y-2">
-                  <li>Open your Phantom wallet app</li>
-                  <li>Send <span className="font-bold">${selectedPlan?.price} worth of SOL</span> to this address:</li>
-                  <div className="bg-muted p-2 rounded text-sm font-mono my-2 break-all select-all">
-                    HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu
-                  </div>
-                  <li>Copy the transaction ID (signature) from your wallet</li>
-                  <li>Paste it below and click "Verify Payment"</li>
-                </ol>
-              </div>
+              <Tabs 
+                defaultValue="solana" 
+                value={paymentMethod} 
+                onValueChange={(value) => setPaymentMethod(value as 'solana' | 'ethereum')}
+                className="mb-6"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="solana">Solana (Phantom)</TabsTrigger>
+                  <TabsTrigger value="ethereum">Ethereum (MetaMask)</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="solana" className="space-y-4">
+                  <h3 className="font-medium">Payment Instructions:</h3>
+                  <ol className="list-decimal pl-5 space-y-2">
+                    <li>Open your Phantom wallet app</li>
+                    <li>Send <span className="font-bold">${selectedPlan?.price} worth of SOL</span> to this address:</li>
+                    <div className="bg-muted p-2 rounded text-sm font-mono my-2 break-all select-all">
+                      HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu
+                    </div>
+                    <li>Copy the transaction ID (signature) from your wallet</li>
+                    <li>Paste it below and click "Verify Payment"</li>
+                  </ol>
+                </TabsContent>
+
+                <TabsContent value="ethereum" className="space-y-4">
+                  <h3 className="font-medium">Payment Instructions:</h3>
+                  <ol className="list-decimal pl-5 space-y-2">
+                    <li>Open your MetaMask wallet</li>
+                    <li>Send <span className="font-bold">${selectedPlan?.price} worth of ETH</span> to this address:</li>
+                    <div className="bg-muted p-2 rounded text-sm font-mono my-2 break-all select-all">
+                      0x55D35544369F05D3E5B62c47559de3f4DAc337c6
+                    </div>
+                    <li>Copy the transaction hash from your wallet</li>
+                    <li>Paste it below and click "Verify Payment"</li>
+                  </ol>
+                </TabsContent>
+              </Tabs>
 
               <form onSubmit={handlePaymentSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="transaction-id">Solana Transaction ID</Label>
+                  <Label htmlFor="transaction-id">
+                    {paymentMethod === 'solana' ? 'Solana Transaction ID' : 'Ethereum Transaction Hash'}
+                  </Label>
                   <Input
                     id="transaction-id"
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="Enter your transaction signature"
+                    placeholder={`Enter your ${paymentMethod === 'solana' ? 'transaction signature' : 'transaction hash'}`}
                     required
                   />
                   {transactionId && transactionId.length > 20 && verificationAttempted && (
                     <div className="mt-2">
                       <a 
-                        href={getSolscanTransactionLink(transactionId)} 
+                        href={paymentMethod === 'solana' 
+                          ? getSolscanTransactionLink(transactionId) 
+                          : `https://etherscan.io/tx/${transactionId}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-sm flex items-center text-primary hover:underline"
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
-                        View transaction on Solscan
+                        View transaction on {paymentMethod === 'solana' ? 'Solscan' : 'Etherscan'}
                       </a>
                     </div>
                   )}
