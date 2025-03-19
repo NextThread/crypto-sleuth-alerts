@@ -2,74 +2,32 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, BarChart2, Database, Users } from "lucide-react";
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../config/firebase';
-
-const CHART_COUNT_KEY = 'globalChartCount';
-const LOCAL_STORAGE_KEY = 'totalAnalysis';
-const INITIAL_COUNT = 10000;
 
 const AnalysisCounter = () => {
-  const [totalAnalysis, setTotalAnalysis] = useState(INITIAL_COUNT);
+  const [activeTraders, setActiveTraders] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [activeTraders, setActiveTraders] = useState(Math.floor(INITIAL_COUNT / 21));
 
   useEffect(() => {
-    // Try to load from localStorage first
-    const savedCount = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (savedCount) {
-      setTotalAnalysis(parseInt(savedCount, 10));
-    }
-
-    // Set up real-time listener to Firestore
-    const countRef = doc(db, 'stats', CHART_COUNT_KEY);
+    // Set initial random active traders count
+    updateActiveTraders();
     
-    // First get the initial count
-    const fetchInitialCount = async () => {
-      try {
-        const countDoc = await getDoc(countRef);
-        if (countDoc.exists()) {
-          const count = countDoc.data().count || INITIAL_COUNT;
-          setTotalAnalysis(count);
-          localStorage.setItem(LOCAL_STORAGE_KEY, count.toString());
-        }
-      } catch (error) {
-        console.error('Error fetching initial count:', error);
-      }
-    };
-    
-    fetchInitialCount();
-    
-    // Then listen for real-time updates
-    const unsubscribe = onSnapshot(countRef, (doc) => {
-      if (doc.exists()) {
-        const newCount = doc.data().count || INITIAL_COUNT;
-        setTotalAnalysis(newCount);
-        setIsAnimating(true);
-        setTimeout(() => setIsAnimating(false), 1500);
-        localStorage.setItem(LOCAL_STORAGE_KEY, newCount.toString());
-      }
-    }, (error) => {
-      console.error('Error listening to counter updates:', error);
-    });
-
     // Set up interval to update active traders count randomly every minute
     const tradersInterval = setInterval(() => {
-      const baseTraders = Math.floor(totalAnalysis / 21);
-      const randomOffset = Math.floor(Math.random() * 50) - 25; // Random number between -25 and 25
-      setActiveTraders(baseTraders + randomOffset);
+      updateActiveTraders();
     }, 60000); // Update every minute
 
-    // Initial random active traders calculation
-    const baseTraders = Math.floor(totalAnalysis / 21);
-    const randomOffset = Math.floor(Math.random() * 50) - 25;
-    setActiveTraders(baseTraders + randomOffset);
-
     return () => {
-      unsubscribe();
       clearInterval(tradersInterval);
     };
-  }, [totalAnalysis]);
+  }, []);
+
+  const updateActiveTraders = () => {
+    // Random value between 76 and 1800
+    const randomTraders = Math.floor(Math.random() * (1800 - 76 + 1)) + 76;
+    setActiveTraders(randomTraders);
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 1500);
+  };
 
   return (
     <Card className="glass-card w-full animate-fade-in">
@@ -87,8 +45,8 @@ const AnalysisCounter = () => {
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Total Analyses</p>
-              <h3 className={`text-2xl font-mono font-bold ${isAnimating ? 'text-primary animate-pulse' : ''}`}>
-                {totalAnalysis.toLocaleString()}
+              <h3 className="text-2xl font-mono font-bold">
+                50K+
               </h3>
             </div>
           </div>
@@ -100,7 +58,7 @@ const AnalysisCounter = () => {
             <div>
               <p className="text-muted-foreground text-xs">Data Points Processed</p>
               <h3 className="text-2xl font-mono font-bold">
-                {(totalAnalysis * 215).toLocaleString()}
+                300K+
               </h3>
             </div>
           </div>
@@ -111,7 +69,7 @@ const AnalysisCounter = () => {
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Active Traders</p>
-              <h3 className="text-2xl font-mono font-bold">
+              <h3 className={`text-2xl font-mono font-bold ${isAnimating ? 'text-primary animate-pulse' : ''}`}>
                 {activeTraders.toLocaleString()}
               </h3>
             </div>

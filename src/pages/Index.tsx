@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -312,6 +311,14 @@ const Index = () => {
           </Alert>
         )}
         
+        <div className="mb-6 animate-fade-in animation-delay-300">
+          <PriceMetrics symbol={symbol} />
+        </div>
+        
+        <div className="mb-6">
+          <AnalysisCounter />
+        </div>
+        
         <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-6 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600 shadow-md">
           {INTERVALS.map((item) => (
             <button
@@ -327,14 +334,6 @@ const Index = () => {
               {getTimeLabelByInterval(item)}
             </button>
           ))}
-        </div>
-        
-        <div className="mb-6 animate-fade-in animation-delay-300">
-          <PriceMetrics symbol={symbol} />
-        </div>
-        
-        <div className="mb-6">
-          <AnalysisCounter />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
