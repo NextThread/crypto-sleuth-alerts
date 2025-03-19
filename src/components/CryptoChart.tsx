@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables, ChartType, ScaleOptions } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -183,7 +182,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (isLoading && chartData.length === 0) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg">
+      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg mt-6">
         <div className="flex flex-col items-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-4 text-muted-foreground">Loading chart data...</p>
@@ -194,7 +193,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (error) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg">
+      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg mt-6">
         <div className="text-destructive flex flex-col items-center">
           <p>Error: {error}</p>
           <button
@@ -210,7 +209,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (chartData.length === 0) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg">
+      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg mt-6">
         <p className="text-muted-foreground">No data available</p>
       </div>
     );
@@ -850,7 +849,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   }
   
   return (
-    <div id="crypto-chart-container" className="w-full h-[400px] glass-panel rounded-lg p-4">
+    <div id="crypto-chart-container" className="w-full h-[400px] glass-panel rounded-lg p-4 mt-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{symbol} Chart</h3>
         <div className="flex items-center gap-2">

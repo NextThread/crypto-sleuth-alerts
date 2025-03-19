@@ -43,7 +43,7 @@ export interface TickerData {
   count: number;
 }
 
-export type TimeInterval = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
+export type TimeInterval = '1s' | '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '1w' | '1M';
 
 const API_BASE_URL = 'https://api.binance.com/api/v3';
 
@@ -80,8 +80,12 @@ export const getKlineData = async (
   limit: number = 500
 ): Promise<KlineData[]> => {
   try {
+    // Map '1s' to appropriate API parameter (using '1m' as fallback)
+    // Map '1M' to '1M' for monthly data
+    const apiInterval = interval === '1s' ? '1m' : interval;
+    
     const response = await fetch(
-      `${API_BASE_URL}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+      `${API_BASE_URL}/klines?symbol=${symbol}&interval=${apiInterval}&limit=${limit}`
     );
     const data = await response.json();
     

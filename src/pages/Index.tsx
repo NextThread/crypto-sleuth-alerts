@@ -11,6 +11,7 @@ import CryptoNews from '../components/CryptoNews';
 import HowWeWork from '../components/HowWeWork';
 import AnalysisCounter from '../components/AnalysisCounter';
 import BacktestingResults from '../components/BacktestingResults';
+import CryptoRecommendations from '../components/CryptoRecommendations';
 import { TimeInterval, getKlineData } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -24,7 +25,7 @@ import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import CommunityForum from '../components/CommunityForum';
 
-const INTERVALS: TimeInterval[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
+const INTERVALS: TimeInterval[] = ['1s', '1m', '5m', '15m', '1h', '4h', '1d', '1w', '1M'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
 const CHART_COUNT_KEY = 'globalChartCount';
 
@@ -319,7 +320,11 @@ const Index = () => {
           <AnalysisCounter />
         </div>
         
-        <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-6 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600 shadow-md">
+        <div className="mb-8">
+          <CryptoRecommendations />
+        </div>
+        
+        <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-4 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600 shadow-md">
           {INTERVALS.map((item) => (
             <button
               key={item}
