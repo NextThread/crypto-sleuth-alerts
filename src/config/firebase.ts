@@ -6,13 +6,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAMIxpPY0WVn0jw77XJDtMBW60lSdBeKbs",
-  authDomain: "market-mirror-insights.firebaseapp.com",
-  projectId: "market-mirror-insights",
-  storageBucket: "market-mirror-insights.firebasestorage.app",
-  messagingSenderId: "771585766449",
-  appId: "1:771585766449:web:d6db4431d3a3b3009f9110",
-  measurementId: "G-E3MW1QSD68"
+  apiKey: "AIzaSyCylfX9CAJbUZr7hr-IeR5IiAz8DYqahUY",
+  authDomain: "chartpulse-team.firebaseapp.com",
+  projectId: "chartpulse-team",
+  storageBucket: "chartpulse-team.firebasestorage.app",
+  messagingSenderId: "980653845524",
+  appId: "1:980653845524:web:52202027b3d5d0b13b0b01",
+  measurementId: "G-36488GC8YQ"
 };
 
 // Initialize Firebase
