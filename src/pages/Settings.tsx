@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { 
@@ -8,12 +7,10 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { 
-  Switch, 
-  Input,
-  Label,
-  Button
-} from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { BellRing, Mail, Send, Key } from 'lucide-react';
 import { NotificationPreferences } from '@/lib/types';
