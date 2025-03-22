@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Chart, registerables, ChartType, ScaleOptions } from 'chart.js';
+import { Chart, registerables, ChartType } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { formatTimeLabel, generateChartOptions } from '../utils/chartUtils';
@@ -757,6 +757,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               datasets: chartControls.chartType === 'line' 
                 ? [
                     {
+                      type: 'line',
                       label: 'Price',
                       data: closes,
                       borderColor: 'rgba(59, 130, 246, 1)',
@@ -769,7 +770,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                   ]
                 : [
                     {
-                      type: 'bar',
+                      type: 'bar' as const,
                       label: 'Volume',
                       data: volumes,
                       backgroundColor: chartData.map(d => 
@@ -780,7 +781,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       yAxisID: 'y1',
                       order: 2,
                       categoryPercentage: 0.3,
-                    } as const,
+                    },
                     {
                       type: 'line' as const,
                       label: 'OHLC',
@@ -792,7 +793,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       yAxisID: 'y',
                       order: 1,
                     }
-                  ]
+                  ] as any
             }}
             options={{
               responsive: true,
