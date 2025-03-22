@@ -1,10 +1,10 @@
 
 import { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2 } from 'lucide-react';
+import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,6 +14,7 @@ const Layout = ({ children }: LayoutProps) => {
   const { user, logout } = useAuth();
   const { currentSubscription } = useSubscription();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 text-foreground antialiased overflow-x-hidden">
@@ -27,6 +28,33 @@ const Layout = ({ children }: LayoutProps) => {
               </div>
               <span>Chart<span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-400">Pulse</span></span>
             </Link>
+            
+            <nav className="hidden md:flex ml-8">
+              <ul className="flex gap-6">
+                <li>
+                  <Link 
+                    to="/" 
+                    className={`text-sm transition-colors hover:text-primary flex items-center gap-1.5 ${
+                      location.pathname === '/' ? 'text-primary font-medium' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <BarChart2 className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/blog" 
+                    className={`text-sm transition-colors hover:text-primary flex items-center gap-1.5 ${
+                      location.pathname.includes('/blog') ? 'text-primary font-medium' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Blog
+                  </Link>
+                </li>
+              </ul>
+            </nav>
           </div>
           
           {user && (

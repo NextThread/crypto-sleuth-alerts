@@ -11,6 +11,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Subscription />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/blog" 
+                element={
+                  <ProtectedRoute>
+                    <Blog />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/blog/:slug" 
+                element={
+                  <ProtectedRoute>
+                    <BlogPost />
                   </ProtectedRoute>
                 } 
               />
