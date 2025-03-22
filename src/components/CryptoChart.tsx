@@ -765,13 +765,13 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       borderWidth: 2,
                       fill: true,
                       tension: 0.1,
-                    },
+                    }
                   ]
                 : [
                     {
+                      type: 'bar',
                       label: 'Volume',
                       data: volumes,
-                      type: 'bar' as const,
                       backgroundColor: chartData.map(d => 
                         d.close > d.open 
                           ? 'rgba(16, 185, 129, 0.3)'
@@ -779,9 +779,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       ),
                       yAxisID: 'y1',
                       order: 2,
-                      barPercentage: 0.3,
-                    },
+                      categoryPercentage: 0.3,
+                    } as const,
                     {
+                      type: 'line' as const,
                       label: 'OHLC',
                       data: closes,
                       borderColor: 'rgba(59, 130, 246, 1)',
