@@ -16,10 +16,10 @@ import { PatternControlsState, ChartControlsState } from './ChartControls';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import FullScreenToggle from './FullScreenToggle';
 import 'chart.js/auto';
 
-// Register Chart.js components
 Chart.register(...registerables, annotationPlugin, zoomPlugin);
 
 interface CryptoChartProps {
@@ -128,7 +128,6 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     const trend = data[data.length - 1].close > data[data.length - 10].close ? 'bullish' : 'bearish';
     const patterns = detectPatterns(data);
     
-    // Generate a more detailed analysis
     const patternsList = [];
     if (patterns.headAndShoulders?.length) patternsList.push('Head & Shoulders');
     if (patterns.doubleTop?.length) patternsList.push('Double Top');
@@ -136,11 +135,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     if (patterns.triangle?.length) patternsList.push(`${patterns.triangle[0]?.type} Triangle`);
     if (patterns.wedge?.length) patternsList.push(`${patterns.wedge[0]?.type} Wedge`);
     
-    // Generate meaningful profit targets that are at least 2-3% gains
     const currentPrice = data[data.length - 1].close;
     const adjustedTargetPrice = trend === 'bullish' 
-      ? Math.max(takeProfit, currentPrice * 1.03) // At least 3% profit for bullish trend
-      : Math.min(takeProfit, currentPrice * 0.97); // At least 3% profit for bearish trend (short)
+      ? Math.max(takeProfit, currentPrice * 1.03) 
+      : Math.min(takeProfit, currentPrice * 0.97);
     
     const timeframeRecommendation = interval === '15m' ? '1h' : 
                                    interval === '1h' ? '4h' : 
@@ -164,7 +162,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
       entryPointExplanation: `Based on ${trend} trend and RSI indicators ${trend === 'bullish' ? 'crossing above 30' : 'crossing below 70'}, suggesting ${trend === 'bullish' ? 'oversold' : 'overbought'} conditions.`,
       targetExplanation: `Target set at ${adjustedTargetPrice.toFixed(2)} (${Math.abs(((adjustedTargetPrice - currentPrice) / currentPrice) * 100).toFixed(2)}% ${trend === 'bullish' ? 'gain' : 'drop'}) based on historical resistance and Fibonacci extensions.`,
       stopLossExplanation: `Stop loss placed at ${stopLoss.toFixed(2)} (${Math.abs(((stopLoss - currentPrice) / currentPrice) * 100).toFixed(2)}% risk) below key support to avoid false breakouts.`,
-      confidenceScore: Math.round(60 + Math.random() * 30) // Random score between 60-90
+      confidenceScore: Math.round(60 + Math.random() * 30)
     });
     
     toast({
@@ -182,19 +180,19 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (isLoading && chartData.length === 0) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg mt-6">
-        <div className="flex flex-col items-center">
+      <Card className="w-full h-[400px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
+        <CardContent className="flex flex-col items-center justify-center h-full">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-4 text-muted-foreground">Loading chart data...</p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
   
   if (error) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg mt-6">
-        <div className="text-destructive flex flex-col items-center">
+      <Card className="w-full h-[400px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
+        <CardContent className="flex flex-col items-center justify-center h-full text-destructive">
           <p>Error: {error}</p>
           <button
             className="mt-4 px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded-md transition-colors"
@@ -202,16 +200,18 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           >
             Retry
           </button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
   
   if (chartData.length === 0) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center glass-panel rounded-lg mt-6">
-        <p className="text-muted-foreground">No data available</p>
-      </div>
+      <Card className="w-full h-[400px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
+        <CardContent className="flex items-center justify-center h-full">
+          <p className="text-muted-foreground">No data available</p>
+        </CardContent>
+      </Card>
     );
   }
   
@@ -647,316 +647,270 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
-  type ExtendedScales = {
-    x: {
-      ticks: {
-        maxRotation: number;
-        color: string;
-        font: {
-          size: number;
-        };
-        maxTicksLimit: number;
-      };
-      grid: {
-        display: boolean;
-      };
-    };
-    y: {
-      position: 'right';
-      grid: {
-        color: string;
-      };
-      ticks: {
-        color: string;
-        font: {
-          size: number;
-        };
-      };
-    };
-    y1?: {
-      position: 'left';
-      grid: {
-        display: boolean;
-      };
-      ticks: {
-        display: boolean;
-      };
-      max?: number;
-    };
-  };
-  
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      annotation: {
-        annotations,
-      },
-      zoom: {
-        pan: {
-          enabled: true,
-          mode: 'xy' as const,
-          modifierKey: 'shift' as const,
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-            speed: 0.1,
-          },
-          pinch: {
-            enabled: true
-          },
-          mode: 'xy' as const,
-          drag: {
-            enabled: true,
-            backgroundColor: 'rgba(59, 130, 246, 0.3)',
-            borderColor: 'rgba(59, 130, 246, 0.8)',
-            borderWidth: 1,
-          },
-        },
-        limits: {
-          x: {min: 'original' as const, max: 'original' as const, minRange: 10},
-          y: {min: 'original' as const, max: 'original' as const, minRange: 10}
-        }
-      },
-      tooltip: {
-        ...baseOptions.plugins.tooltip,
-        callbacks: {
-          label: (context: any) => {
-            const index = context.dataIndex;
-            const dataPoint = chartData[index];
-            
-            if (!dataPoint) return '';
-            
-            if (chartControls.chartType === 'candlestick') {
-              return [
-                `Open: ${dataPoint.open.toFixed(2)}`,
-                `High: ${dataPoint.high.toFixed(2)}`,
-                `Low: ${dataPoint.low.toFixed(2)}`,
-                `Close: ${dataPoint.close.toFixed(2)}`,
-                `Volume: ${Math.round(dataPoint.volume)}`,
-              ];
-            } else {
-              return `Price: ${dataPoint.close.toFixed(2)}`;
-            }
-          },
-        },
-        titleFont: {
-          size: 12,
-          weight: 'bold' as const,
-        },
-        bodyFont: {
-          size: 11,
-        },
-      },
-      legend: {
-        display: false,
-      },
-    },
-    interaction: {
-      mode: 'nearest' as const,
-      intersect: false,
-    },
-    scales: {
-      x: {
-        ticks: {
-          maxRotation: 0,
-          color: 'rgba(255, 255, 255, 0.5)',
-          font: {
-            size: 10,
-          },
-          maxTicksLimit: 8,
-        },
-        grid: {
-          display: false,
-        }
-      },
-      y: {
-        position: 'right' as const,
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-        },
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.5)',
-          font: {
-            size: 10,
-          },
-        },
-      }
-    } as ExtendedScales
-  };
-  
-  let data: any;
-  
-  if (chartControls.chartType === 'line') {
-    data = {
-      labels,
-      datasets: [
-        {
-          label: 'Price',
-          data: closes,
-          borderColor: 'rgba(59, 130, 246, 1)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          pointRadius: 0,
-          borderWidth: 2,
-          fill: true,
-          tension: 0.1,
-        },
-      ],
-    };
-  } else {
-    const volumeDataset = {
-      label: 'Volume',
-      data: volumes,
-      type: 'bar' as const,
-      backgroundColor: chartData.map(d => 
-        d.close > d.open 
-          ? 'rgba(16, 185, 129, 0.3)'
-          : 'rgba(239, 68, 68, 0.3)'
-      ),
-      yAxisID: 'y1',
-      order: 2,
-      barPercentage: 0.3,
-    };
-    
-    const priceDataset = {
-      label: 'OHLC',
-      data: closes,
-      borderColor: 'rgba(59, 130, 246, 1)',
-      backgroundColor: 'rgba(59, 130, 246, 0.05)',
-      borderWidth: 2,
-      pointRadius: 0,
-      yAxisID: 'y',
-      order: 1,
-    };
-    
-    data = {
-      labels,
-      datasets: [volumeDataset, priceDataset],
-    };
-    
-    const scales = options.scales as ExtendedScales;
-    scales.y1 = {
-      position: 'left' as const,
-      grid: {
-        display: false,
-      },
-      ticks: {
-        display: false,
-      },
-      max: Math.max(...volumes) * 3,
-    };
-  }
-  
   return (
-    <div id="crypto-chart-container" className="w-full h-[400px] glass-panel rounded-lg p-4 mt-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{symbol} Chart</h3>
-        <div className="flex items-center gap-2">
-          <FullScreenToggle targetId="crypto-chart-container" />
-          <div className="text-xs font-mono text-muted-foreground">
-            Last update: {new Date(chartData[chartData.length - 1]?.closeTime || Date.now()).toLocaleTimeString()}
-          </div>
-        </div>
-      </div>
-      
-      <TooltipProvider>
-        <div className="mb-4 p-3 bg-black/10 rounded border border-primary/10 text-xs">
-          <p className="font-medium mb-1 text-sm flex items-center justify-between">
-            <span>AI Analysis:</span>
-            <Badge variant={aiAnalysis.confidenceScore > 75 ? "default" : "secondary"}>
-              Confidence: {aiAnalysis.confidenceScore}%
-            </Badge>
-          </p>
-          <div className="space-y-1 text-muted-foreground">
-            <p className="text-foreground mb-1">{aiAnalysis.summary}</p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
-                    <span className="text-primary text-xs font-medium">Recommended Action:</span>
-                    <span className="text-xs">{aiAnalysis.recommendedAction}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
-                  <p>Based on current chart patterns and momentum indicators</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
-                    <span className="text-primary text-xs font-medium">Short-term Outlook:</span>
-                    <span className="text-xs">{aiAnalysis.shortTermOutlook}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
-                  <p>Projection based on current market conditions</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
-                    <span className="text-primary text-xs font-medium">Key Patterns:</span>
-                    <span className="text-xs">{aiAnalysis.keyPatterns.length > 0 ? aiAnalysis.keyPatterns.join(', ') : 'No clear patterns detected'}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
-                  <p>Chart patterns identified in the current timeframe</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
-                    <span className="text-primary text-xs font-medium">Timeframe Analysis:</span>
-                    <span className="text-xs">{aiAnalysis.bestTimeframe}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
-                  <p>Recommended timeframes for optimal analysis</p>
-                </TooltipContent>
-              </Tooltip>
+    <Card id="crypto-chart-container" className="w-full h-[400px] rounded-lg p-4 mt-6">
+      <CardHeader className="p-4 pb-0">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-semibold">{symbol} Chart</CardTitle>
+          <div className="flex items-center gap-2">
+            <FullScreenToggle targetId="crypto-chart-container" />
+            <div className="text-xs font-mono text-muted-foreground">
+              Last update: {new Date(chartData[chartData.length - 1]?.closeTime || Date.now()).toLocaleTimeString()}
             </div>
           </div>
         </div>
-      </TooltipProvider>
+      </CardHeader>
       
-      <div className="h-[320px] relative">
+      <CardContent className="p-0 pt-4">
         <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                className="absolute top-2 right-2 z-10 bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
-                onClick={() => {
-                  if (chartRef.current) {
-                    if (chartRef.current.chartInstance) {
-                      chartRef.current.chartInstance.resetZoom();
-                    } else if (chartRef.current.current) {
-                      chartRef.current.current.resetZoom();
-                    }
-                  }
-                }}
-              >
-                Reset Zoom
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-black/80 text-white p-2">
-              <p>Reset chart zoom and pan to default view</p>
-            </TooltipContent>
-          </Tooltip>
+          <div className="mb-4 p-3 bg-black/10 rounded border border-primary/10 text-xs">
+            <p className="font-medium mb-1 text-sm flex items-center justify-between">
+              <span>AI Analysis:</span>
+              <Badge variant={aiAnalysis.confidenceScore > 75 ? "default" : "secondary"}>
+                Confidence: {aiAnalysis.confidenceScore}%
+              </Badge>
+            </p>
+            <div className="space-y-1 text-muted-foreground">
+              <p className="text-foreground mb-1">{aiAnalysis.summary}</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                      <span className="text-primary text-xs font-medium">Recommended Action:</span>
+                      <span className="text-xs">{aiAnalysis.recommendedAction}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                    <p>Based on current chart patterns and momentum indicators</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                      <span className="text-primary text-xs font-medium">Short-term Outlook:</span>
+                      <span className="text-xs">{aiAnalysis.shortTermOutlook}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                    <p>Projection based on current market conditions</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                      <span className="text-primary text-xs font-medium">Key Patterns:</span>
+                      <span className="text-xs">{aiAnalysis.keyPatterns.length > 0 ? aiAnalysis.keyPatterns.join(', ') : 'No clear patterns detected'}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                    <p>Chart patterns identified in the current timeframe</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                      <span className="text-primary text-xs font-medium">Timeframe Analysis:</span>
+                      <span className="text-xs">{aiAnalysis.bestTimeframe}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs bg-black/80 text-white p-2">
+                    <p>Recommended timeframes for optimal analysis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </div>
         </TooltipProvider>
         
-        <Line
-          data={data}
-          options={options}
-          height={320}
-          ref={chartRef}
-        />
-      </div>
-    </div>
+        <div className="h-[320px] relative">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  className="absolute top-2 right-2 z-10 bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
+                  onClick={() => {
+                    if (chartRef.current) {
+                      if (chartRef.current.chartInstance) {
+                        chartRef.current.chartInstance.resetZoom();
+                      } else if (chartRef.current.current) {
+                        chartRef.current.current.resetZoom();
+                      }
+                    }
+                  }}
+                >
+                  Reset Zoom
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-black/80 text-white p-2">
+                <p>Reset chart zoom and pan to default view</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <Line
+            data={{
+              labels,
+              datasets: chartControls.chartType === 'line' 
+                ? [
+                    {
+                      label: 'Price',
+                      data: closes,
+                      borderColor: 'rgba(59, 130, 246, 1)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      pointRadius: 0,
+                      borderWidth: 2,
+                      fill: true,
+                      tension: 0.1,
+                    },
+                  ]
+                : [
+                    {
+                      label: 'Volume',
+                      data: volumes,
+                      type: 'bar' as const,
+                      backgroundColor: chartData.map(d => 
+                        d.close > d.open 
+                          ? 'rgba(16, 185, 129, 0.3)'
+                          : 'rgba(239, 68, 68, 0.3)'
+                      ),
+                      yAxisID: 'y1',
+                      order: 2,
+                      barPercentage: 0.3,
+                    },
+                    {
+                      label: 'OHLC',
+                      data: closes,
+                      borderColor: 'rgba(59, 130, 246, 1)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                      borderWidth: 2,
+                      pointRadius: 0,
+                      yAxisID: 'y',
+                      order: 1,
+                    }
+                  ]
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                annotation: {
+                  annotations,
+                },
+                zoom: {
+                  pan: {
+                    enabled: true,
+                    mode: 'xy' as const,
+                    modifierKey: 'shift' as const,
+                  },
+                  zoom: {
+                    wheel: {
+                      enabled: true,
+                      speed: 0.1,
+                    },
+                    pinch: {
+                      enabled: true
+                    },
+                    mode: 'xy' as const,
+                    drag: {
+                      enabled: true,
+                      backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                      borderColor: 'rgba(59, 130, 246, 0.8)',
+                      borderWidth: 1,
+                    },
+                  },
+                  limits: {
+                    x: {min: 'original' as const, max: 'original' as const, minRange: 10},
+                    y: {min: 'original' as const, max: 'original' as const, minRange: 10}
+                  }
+                },
+                tooltip: {
+                  ...baseOptions.plugins.tooltip,
+                  callbacks: {
+                    label: (context: any) => {
+                      const index = context.dataIndex;
+                      const dataPoint = chartData[index];
+                      
+                      if (!dataPoint) return '';
+                      
+                      if (chartControls.chartType === 'candlestick') {
+                        return [
+                          `Open: ${dataPoint.open.toFixed(2)}`,
+                          `High: ${dataPoint.high.toFixed(2)}`,
+                          `Low: ${dataPoint.low.toFixed(2)}`,
+                          `Close: ${dataPoint.close.toFixed(2)}`,
+                          `Volume: ${Math.round(dataPoint.volume)}`,
+                        ];
+                      } else {
+                        return `Price: ${dataPoint.close.toFixed(2)}`;
+                      }
+                    },
+                  },
+                  titleFont: {
+                    size: 12,
+                    weight: 'bold' as const,
+                  },
+                  bodyFont: {
+                    size: 11,
+                  },
+                },
+                legend: {
+                  display: false,
+                },
+              },
+              interaction: {
+                mode: 'nearest' as const,
+                intersect: false,
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    maxRotation: 0,
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    font: {
+                      size: 10,
+                    },
+                    maxTicksLimit: 8,
+                  },
+                  grid: {
+                    display: false,
+                  }
+                },
+                y: {
+                  position: 'right' as const,
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)',
+                  },
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    font: {
+                      size: 10,
+                    },
+                  },
+                },
+                ...(chartControls.chartType !== 'line' ? {
+                  y1: {
+                    position: 'left' as const,
+                    grid: {
+                      display: false,
+                    },
+                    ticks: {
+                      display: false,
+                    },
+                    max: Math.max(...volumes) * 3,
+                  }
+                } : {})
+              }
+            }}
+            height={320}
+            ref={chartRef}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
