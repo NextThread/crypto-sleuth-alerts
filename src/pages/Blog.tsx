@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -6,20 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Bookmarks, Clock, Eye, ScrollText, Tag } from "lucide-react";
+import { Bookmark, Clock, Eye, ScrollText, Tag } from "lucide-react";
 
 const Blog = () => {
   const { hash } = useLocation();
   
   useEffect(() => {
-    // Scroll to the section if there's a hash in the URL
     if (hash) {
       const element = document.getElementById(hash.substring(1));
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
       }
     } else {
-      // Scroll to top when page loads without hash
       window.scrollTo(0, 0);
     }
   }, [hash]);
@@ -209,7 +206,7 @@ const BlogPostCard = ({ post }: { post: BlogPost }) => {
               {Math.floor(Math.random() * 500) + 100}
             </span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Bookmarks className="h-3 w-3" />
+              <Bookmark className="h-3 w-3" />
               {Math.floor(Math.random() * 50) + 5}
             </span>
           </div>
@@ -219,7 +216,6 @@ const BlogPostCard = ({ post }: { post: BlogPost }) => {
   );
 };
 
-// Blog post data
 const technicalAnalysisPosts: BlogPost[] = [
   {
     title: "Support & Resistance Levels: How to Identify & Use Them Effectively",
