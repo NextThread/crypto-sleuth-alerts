@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Chart, registerables, ChartType } from 'chart.js';
+import { Chart, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { formatTimeLabel, generateChartOptions } from '../utils/chartUtils';
@@ -12,7 +12,7 @@ import {
 } from '../utils/technicalIndicators';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { PatternControlsState, ChartControlsState } from './ChartControls';
+import { ChartControlsState } from './ChartControls';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -648,7 +648,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
   return (
-    <Card id="crypto-chart-container" className="w-full h-[400px] rounded-lg p-4 mt-6">
+    <Card id="crypto-chart-container" className="w-full h-auto rounded-lg mt-6 glass-card overflow-hidden">
       <CardHeader className="p-4 pb-0">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold">{symbol} Chart</CardTitle>
@@ -661,9 +661,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       </CardHeader>
       
-      <CardContent className="p-0 pt-4">
+      <CardContent className="p-4">
         <TooltipProvider>
-          <div className="mb-4 p-3 bg-black/10 rounded border border-primary/10 text-xs">
+          <div className="mb-4 p-3 bg-black/20 rounded border border-primary/10 text-xs">
             <p className="font-medium mb-1 text-sm flex items-center justify-between">
               <span>AI Analysis:</span>
               <Badge variant={aiAnalysis.confidenceScore > 75 ? "default" : "secondary"}>
@@ -676,7 +676,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                    <div className="flex flex-col bg-black/30 p-2 rounded border border-white/10 cursor-help">
                       <span className="text-primary text-xs font-medium">Recommended Action:</span>
                       <span className="text-xs">{aiAnalysis.recommendedAction}</span>
                     </div>
@@ -688,7 +688,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                    <div className="flex flex-col bg-black/30 p-2 rounded border border-white/10 cursor-help">
                       <span className="text-primary text-xs font-medium">Short-term Outlook:</span>
                       <span className="text-xs">{aiAnalysis.shortTermOutlook}</span>
                     </div>
@@ -700,7 +700,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                    <div className="flex flex-col bg-black/30 p-2 rounded border border-white/10 cursor-help">
                       <span className="text-primary text-xs font-medium">Key Patterns:</span>
                       <span className="text-xs">{aiAnalysis.keyPatterns.length > 0 ? aiAnalysis.keyPatterns.join(', ') : 'No clear patterns detected'}</span>
                     </div>
@@ -712,7 +712,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex flex-col bg-black/20 p-2 rounded border border-white/5 cursor-help">
+                    <div className="flex flex-col bg-black/30 p-2 rounded border border-white/10 cursor-help">
                       <span className="text-primary text-xs font-medium">Timeframe Analysis:</span>
                       <span className="text-xs">{aiAnalysis.bestTimeframe}</span>
                     </div>
@@ -726,12 +726,12 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           </div>
         </TooltipProvider>
         
-        <div className="h-[320px] relative">
+        <div className="h-[320px] relative bg-black/10 rounded-lg border border-white/10 p-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
-                  className="absolute top-2 right-2 z-10 bg-black/20 text-white text-xs px-2 py-1 rounded hover:bg-black/30"
+                  className="absolute top-2 right-2 z-10 bg-black/30 text-white text-xs px-2 py-1 rounded hover:bg-black/50 transition-colors"
                   onClick={() => {
                     if (chartRef.current) {
                       if (chartRef.current.chartInstance) {
