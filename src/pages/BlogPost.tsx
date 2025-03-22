@@ -9,16 +9,12 @@ import {
   ArrowLeft, 
   Calendar, 
   Clock, 
-  Share2, 
-  Bookmark, 
-  ThumbsUp, 
-  MessageSquare,
-  Tag,
-  User,
   Twitter,
   Facebook,
   Linkedin,
-  Copy
+  Copy,
+  Tag,
+  User
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -140,16 +136,16 @@ const BlogPost = () => {
             className="w-full h-[300px] md:h-[400px] object-cover rounded-lg mb-8" 
           />
           
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-1.5">
-              <Tag className="h-4 w-4 text-primary" />
-              <div className="flex gap-2">
-                {post.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="bg-secondary/30">{tag}</Badge>
-                ))}
-              </div>
+          <div className="flex items-center gap-1.5 mb-8">
+            <Tag className="h-4 w-4 text-primary" />
+            <div className="flex gap-2">
+              {post.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="bg-secondary/30">{tag}</Badge>
+              ))}
             </div>
-            
+          </div>
+          
+          <div className="flex justify-end mb-8">
             <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
@@ -197,49 +193,49 @@ const BlogPost = () => {
               <div dangerouslySetInnerHTML={{ __html: post.content }} />
             ) : (
               <>
-                <h2>Introduction</h2>
+                <h2 className="text-2xl font-bold mt-8 mb-4">Introduction</h2>
                 <p>
                   In the dynamic world of financial markets, understanding key concepts and strategies is crucial for successful trading. This article provides a detailed exploration of {post.title.toLowerCase()}, offering valuable insights for both beginners and experienced traders.
                 </p>
                 
-                <h2>Why This Matters</h2>
+                <h2 className="text-2xl font-bold mt-8 mb-4">Why This Matters</h2>
                 <p>
                   Whether you're just starting out or looking to refine your approach, mastering these fundamentals can significantly improve your trading performance and help you make more informed decisions in the market.
                 </p>
                 
-                <h2>Key Concepts</h2>
-                <ul>
+                <h2 className="text-2xl font-bold mt-8 mb-4">Key Concepts</h2>
+                <ul className="list-disc pl-6 mb-6">
                   {post.tags.map((tag) => (
-                    <li key={tag}>
+                    <li key={tag} className="mb-2">
                       <strong>{tag.charAt(0).toUpperCase() + tag.slice(1)}</strong>: An essential element for understanding market dynamics and making profitable trades.
                     </li>
                   ))}
                 </ul>
                 
-                <h2>Implementation Strategy</h2>
+                <h2 className="text-2xl font-bold mt-8 mb-4">Implementation Strategy</h2>
                 <p>
                   To effectively implement these concepts in your trading:
                 </p>
-                <ol>
-                  <li>Begin with thorough research and analysis</li>
-                  <li>Develop a consistent methodology</li>
-                  <li>Practice with paper trading before risking real capital</li>
-                  <li>Keep detailed records of your trades to identify patterns</li>
-                  <li>Continuously refine your approach based on results</li>
+                <ol className="list-decimal pl-6 mb-6">
+                  <li className="mb-2">Begin with thorough research and analysis</li>
+                  <li className="mb-2">Develop a consistent methodology</li>
+                  <li className="mb-2">Practice with paper trading before risking real capital</li>
+                  <li className="mb-2">Keep detailed records of your trades to identify patterns</li>
+                  <li className="mb-2">Continuously refine your approach based on results</li>
                 </ol>
                 
-                <h2>Common Mistakes to Avoid</h2>
+                <h2 className="text-2xl font-bold mt-8 mb-4">Common Mistakes to Avoid</h2>
                 <p>
                   Many traders fall into these common traps:
                 </p>
-                <ul>
-                  <li>Overtrading based on emotions rather than analysis</li>
-                  <li>Ignoring risk management principles</li>
-                  <li>Failing to adapt to changing market conditions</li>
-                  <li>Overcomplicating strategies with too many indicators</li>
+                <ul className="list-disc pl-6 mb-6">
+                  <li className="mb-2">Overtrading based on emotions rather than analysis</li>
+                  <li className="mb-2">Ignoring risk management principles</li>
+                  <li className="mb-2">Failing to adapt to changing market conditions</li>
+                  <li className="mb-2">Overcomplicating strategies with too many indicators</li>
                 </ul>
                 
-                <h2>Conclusion</h2>
+                <h2 className="text-2xl font-bold mt-8 mb-4">Conclusion</h2>
                 <p>
                   Mastering {post.title.toLowerCase()} requires practice, patience, and continuous learning. By understanding these fundamental concepts and implementing them consistently in your trading strategy, you'll be better positioned to navigate market fluctuations and achieve your financial goals.
                 </p>
@@ -248,49 +244,6 @@ const BlogPost = () => {
           </div>
           
           <Separator className="my-8" />
-          
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" className="gap-1.5">
-                <ThumbsUp className="h-4 w-4" />
-                Like
-              </Button>
-              <Button variant="outline" className="gap-1.5">
-                <Bookmark className="h-4 w-4" />
-                Save
-              </Button>
-            </div>
-            
-            <Button variant="outline" className="gap-1.5">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-          </div>
-          
-          <Separator className="mb-8" />
-          
-          <div className="mb-12">
-            <h3 className="text-xl font-bold mb-6">Leave a Comment</h3>
-            <div className="flex gap-4 items-start">
-              <img 
-                src="https://ui-avatars.com/api/?name=Guest&background=random" 
-                alt="Guest" 
-                className="w-10 h-10 rounded-full" 
-              />
-              <div className="flex-1">
-                <textarea 
-                  placeholder="Share your thoughts..." 
-                  className="w-full p-3 rounded-md bg-secondary/30 border border-primary/10 focus:border-primary/40 focus:outline-none min-h-32"
-                ></textarea>
-                <div className="flex justify-end mt-2">
-                  <Button className="gap-1.5">
-                    <MessageSquare className="h-4 w-4" />
-                    Comment
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
           
           {relatedPosts.length > 0 && (
             <div>
