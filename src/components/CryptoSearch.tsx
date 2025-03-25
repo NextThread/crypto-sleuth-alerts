@@ -1,7 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Lock } from 'lucide-react';
 import { CryptoSymbol, searchSymbols } from '../services/binanceService';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface CryptoSearchProps {
   onSymbolSelect: (symbol: string) => void;
@@ -14,6 +16,8 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -29,6 +33,8 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
   }, []);
   
   useEffect(() => {
+    if (!user) return; // Skip search if not authenticated
+    
     if (searchQuery.length > 1) {
       const delayDebounceFn = setTimeout(async () => {
         setIsLoading(true);
@@ -48,7 +54,7 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
       setResults([]);
       setIsOpen(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, user]);
   
   const handleSelectSymbol = (symbol: string) => {
     onSymbolSelect(symbol);
@@ -61,20 +67,32 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
     setIsOpen(false);
   };
   
+  const handleSearchFocus = () => {
+    if (!user) {
+      navigate('/login');
+    }
+  };
+  
   return (
     <div className="relative w-full md:w-72" ref={searchRef}>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <Search className="h-4 w-4 text-muted-foreground" />
+          {user ? (
+            <Search className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Lock className="h-4 w-4 text-muted-foreground" />
+          )}
         </div>
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search crypto (BTC, ETH, ...)"
-          className="w-full pl-10 pr-10 py-2 h-10 bg-secondary/50 text-foreground border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200"
+          onFocus={handleSearchFocus}
+          placeholder={user ? "Search crypto (BTC, ETH, ...)" : "Sign in to search coins"}
+          className={`w-full pl-10 pr-10 py-2 h-10 bg-secondary/50 text-foreground border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 ${!user ? 'cursor-pointer hover:bg-secondary/70' : ''}`}
+          disabled={!user}
         />
-        {searchQuery && (
+        {searchQuery && user && (
           <button
             onClick={clearSearch}
             className="absolute inset-y-0 right-0 flex items-center pr-3"

@@ -15,6 +15,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import AboutUs from "./pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -28,14 +29,7 @@ const App = () => (
           <SubscriptionProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                } 
-              />
+              <Route path="/" element={<Index />} />
               <Route 
                 path="/subscription" 
                 element={
@@ -46,22 +40,15 @@ const App = () => (
               />
               <Route 
                 path="/blog" 
-                element={
-                  <ProtectedRoute>
-                    <Blog />
-                  </ProtectedRoute>
-                } 
+                element={<Blog />} 
               />
               <Route 
                 path="/blog/:slug" 
-                element={
-                  <ProtectedRoute>
-                    <BlogPost />
-                  </ProtectedRoute>
-                } 
+                element={<BlogPost />}
               />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+              <Route path="/about-us" element={<AboutUs />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </SubscriptionProvider>

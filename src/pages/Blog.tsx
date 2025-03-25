@@ -369,3 +369,21 @@ const cryptoForexPosts: BlogPost[] = [
 ];
 
 export default Blog;
+
+const getFallbackImage = (index: number) => {
+  const fallbackImages = [
+    "https://images.unsplash.com/photo-1518770660439-4636190af475",
+    "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+    "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
+  ];
+  
+  return fallbackImages[index % fallbackImages.length];
+};
+
+export const ensureValidImage = (imageUrl: string | undefined, index: number) => {
+  if (!imageUrl || imageUrl.trim() === '' || imageUrl.includes('undefined')) {
+    return getFallbackImage(index);
+  }
+  return imageUrl;
+};

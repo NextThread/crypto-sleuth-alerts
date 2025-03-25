@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText } from 'lucide-react';
+import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText, Info } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -53,12 +53,23 @@ const Layout = ({ children }: LayoutProps) => {
                     Blog
                   </Link>
                 </li>
+                <li>
+                  <Link 
+                    to="/about-us" 
+                    className={`text-sm transition-colors hover:text-primary flex items-center gap-1.5 ${
+                      location.pathname === '/about-us' ? 'text-primary font-medium' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <Info className="h-4 w-4" />
+                    About Us
+                  </Link>
+                </li>
               </ul>
             </nav>
           </div>
           
-          {user && (
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            {user ? (
               <div className="hidden md:flex items-center gap-6">
                 <div className="flex items-center gap-2.5 bg-secondary/40 hover:bg-secondary/60 rounded-full px-3.5 py-1.5 transition-colors group">
                   <Search className="w-3.5 h-3.5 text-primary group-hover:text-white transition-colors" />
@@ -80,28 +91,42 @@ const Layout = ({ children }: LayoutProps) => {
                   <span className="text-sm relative z-10">{user.displayName || user.email}</span>
                 </div>
               </div>
-              
+            ) : (
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => navigate('/subscription')}
+                onClick={() => navigate('/login')}
                 className="flex items-center gap-1.5 bg-secondary/40 border-white/10 hover:bg-primary/20 hover:border-primary/30 transition-all"
               >
-                <CreditCard className="h-4 w-4" />
-                <span className="hidden md:inline">Subscribe</span>
+                <User className="h-4 w-4" />
+                <span>Sign In</span>
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={logout}
-                className="flex items-center gap-1.5 bg-secondary/40 border-white/10 hover:bg-destructive/20 hover:border-destructive/30 transition-all"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden md:inline">Logout</span>
-              </Button>
-            </div>
-          )}
+            )}
+            
+            {user && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/subscription')}
+                  className="flex items-center gap-1.5 bg-secondary/40 border-white/10 hover:bg-primary/20 hover:border-primary/30 transition-all"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span className="hidden md:inline">Subscribe</span>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={logout}
+                  className="flex items-center gap-1.5 bg-secondary/40 border-white/10 hover:bg-destructive/20 hover:border-destructive/30 transition-all"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden md:inline">Logout</span>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </header>
       
@@ -123,6 +148,10 @@ const Layout = ({ children }: LayoutProps) => {
               <Link to="/terms-and-conditions" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
                 <FileText className="h-3 w-3" />
                 Terms & Conditions
+              </Link>
+              <Link to="/about-us" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <Info className="h-3 w-3" />
+                About Us
               </Link>
             </div>
           </div>

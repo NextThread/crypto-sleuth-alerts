@@ -1,3 +1,4 @@
+import { ensureValidImage } from '../pages/Blog';
 
 export interface BlogPost {
   title: string;
@@ -20,7 +21,7 @@ export const technicalAnalysisPosts: BlogPost[] = [
     readingTime: "8 min read",
     category: "Technical Analysis",
     tags: ["support", "resistance", "price action", "trading"],
-    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop", 0)
   },
   {
     title: "Top 5 Candlestick Patterns Every Trader Should Know",
@@ -30,7 +31,7 @@ export const technicalAnalysisPosts: BlogPost[] = [
     readingTime: "10 min read",
     category: "Technical Analysis",
     tags: ["candlesticks", "patterns", "trading", "price action"],
-    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop", 1)
   },
   {
     title: "Breakouts vs. Fakeouts: How to Avoid Traps in Trading",
@@ -40,7 +41,7 @@ export const technicalAnalysisPosts: BlogPost[] = [
     readingTime: "7 min read",
     category: "Technical Analysis",
     tags: ["breakouts", "fakeouts", "trading", "risk management"],
-    image: "https://images.unsplash.com/photo-1642790551116-18e150f248e5?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1642790551116-18e150f248e5?q=80&w=2070&auto=format&fit=crop", 2)
   },
   {
     title: "Moving Averages (SMA vs. EMA): How to Use Them for Trend Analysis",
@@ -50,7 +51,7 @@ export const technicalAnalysisPosts: BlogPost[] = [
     readingTime: "9 min read",
     category: "Technical Analysis",
     tags: ["moving averages", "SMA", "EMA", "trend analysis"],
-    image: "https://images.unsplash.com/photo-1642790551116-18e150f248e5?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1642790551116-18e150f248e5?q=80&w=2070&auto=format&fit=crop", 3)
   },
   {
     title: "RSI & MACD Indicators: A Beginner's Guide to Momentum Trading",
@@ -60,7 +61,7 @@ export const technicalAnalysisPosts: BlogPost[] = [
     readingTime: "11 min read",
     category: "Technical Analysis",
     tags: ["RSI", "MACD", "momentum", "indicators"],
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1965&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1965&auto=format&fit=crop", 4)
   }
 ];
 
@@ -73,7 +74,7 @@ export const fundamentalAnalysisPosts: BlogPost[] = [
     readingTime: "9 min read",
     category: "Fundamental Analysis",
     tags: ["P/E ratio", "EPS", "stocks", "investing"],
-    image: "https://images.unsplash.com/photo-1642790551116-18e150f248e5?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1642790551116-18e150f248e5?q=80&w=2070&auto=format&fit=crop", 5)
   },
   {
     title: "How to Read a Company's Balance Sheet for Investment Decisions",
@@ -83,7 +84,7 @@ export const fundamentalAnalysisPosts: BlogPost[] = [
     readingTime: "12 min read",
     category: "Fundamental Analysis",
     tags: ["balance sheet", "financial statements", "investing", "financial analysis"],
-    image: "https://images.unsplash.com/photo-1614028674026-a65e31bfd27c?q=80&w=1770&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1614028674026-a65e31bfd27c?q=80&w=1770&auto=format&fit=crop", 6)
   },
   {
     title: "How Economic Indicators Affect the Stock Market (GDP, Inflation, etc.)",
@@ -93,7 +94,7 @@ export const fundamentalAnalysisPosts: BlogPost[] = [
     readingTime: "10 min read",
     category: "Fundamental Analysis",
     tags: ["GDP", "inflation", "economic indicators", "stock market"],
-    image: "https://images.unsplash.com/photo-1560472355-536de3962603?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1560472355-536de3962603?q=80&w=2070&auto=format&fit=crop", 7)
   },
   {
     title: "Impact of Interest Rate Changes on Stock Prices & Market Trends",
@@ -103,7 +104,7 @@ export const fundamentalAnalysisPosts: BlogPost[] = [
     readingTime: "8 min read",
     category: "Fundamental Analysis",
     tags: ["interest rates", "central banks", "market trends", "sector analysis"],
-    image: "https://images.unsplash.com/photo-1626266061368-46a8632bac35?q=80&w=1974&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1626266061368-46a8632bac35?q=80&w=1974&auto=format&fit=crop", 8)
   }
 ];
 
@@ -116,7 +117,7 @@ export const tradingStrategyPosts: BlogPost[] = [
     readingTime: "9 min read",
     category: "Trading Strategies",
     tags: ["risk management", "stop-loss", "position sizing", "trading"],
-    image: "https://images.unsplash.com/photo-1634704784915-aacf363b021f?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1634704784915-aacf363b021f?q=80&w=2070&auto=format&fit=crop", 9)
   },
   {
     title: "Scalping vs. Swing Trading vs. Investing: Which One Suits You?",
@@ -126,7 +127,7 @@ export const tradingStrategyPosts: BlogPost[] = [
     readingTime: "11 min read",
     category: "Trading Strategies",
     tags: ["scalping", "swing trading", "investing", "trading styles"],
-    image: "https://images.unsplash.com/photo-1535320903710-d993d3d77d29?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1535320903710-d993d3d77d29?q=80&w=2070&auto=format&fit=crop", 10)
   },
   {
     title: "Trading Psychology: Controlling Emotions & Avoiding Impulsive Trades",
@@ -136,7 +137,7 @@ export const tradingStrategyPosts: BlogPost[] = [
     readingTime: "10 min read",
     category: "Trading Strategies",
     tags: ["psychology", "emotions", "discipline", "mindset"],
-    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop", 11)
   }
 ];
 
@@ -149,7 +150,7 @@ export const cryptoForexPosts: BlogPost[] = [
     readingTime: "10 min read",
     category: "Crypto Trading",
     tags: ["Bitcoin", "Ethereum", "cryptocurrency", "technical analysis"],
-    image: "https://images.unsplash.com/photo-1629339942248-45d4b10faed3?q=80&w=1932&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1629339942248-45d4b10faed3?q=80&w=1932&auto=format&fit=crop", 12)
   },
   {
     title: "Forex Trading Basics: Best Currency Pairs & Key Indicators",
@@ -159,6 +160,6 @@ export const cryptoForexPosts: BlogPost[] = [
     readingTime: "12 min read",
     category: "Forex Trading",
     tags: ["forex", "currency pairs", "indicators", "trading"],
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1965&auto=format&fit=crop"
+    image: ensureValidImage("https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1965&auto=format&fit=crop", 13)
   }
 ];
