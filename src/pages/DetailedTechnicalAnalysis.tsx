@@ -175,7 +175,7 @@ const DetailedTechnicalAnalysis: React.FC<DetailedTechnicalAnalysisProps> = ({ s
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{analysis.pattern}</span>
-                    <Badge variant={analysis.sentiment === 'bullish' ? 'success' : 'destructive'} className="capitalize">
+                    <Badge variant={analysis.sentiment === 'bullish' ? 'default' : 'destructive'} className="capitalize">
                       {analysis.sentiment}
                     </Badge>
                   </div>
@@ -220,37 +220,37 @@ const DetailedTechnicalAnalysis: React.FC<DetailedTechnicalAnalysisProps> = ({ s
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-secondary/10 p-2 rounded-md">
                     <div className="text-xs text-muted-foreground mb-1">15m</div>
-                    <Badge variant={Math.random() > 0.5 ? 'success' : 'destructive'} className="w-full">
+                    <Badge variant={Math.random() > 0.5 ? 'default' : 'destructive'} className="w-full">
                       {Math.random() > 0.5 ? 'Bullish' : 'Bearish'}
                     </Badge>
                   </div>
                   <div className="bg-secondary/10 p-2 rounded-md">
                     <div className="text-xs text-muted-foreground mb-1">1H</div>
-                    <Badge variant={Math.random() > 0.5 ? 'success' : 'destructive'} className="w-full">
+                    <Badge variant={Math.random() > 0.5 ? 'default' : 'destructive'} className="w-full">
                       {Math.random() > 0.5 ? 'Bullish' : 'Bearish'}
                     </Badge>
                   </div>
                   <div className="bg-secondary/10 p-2 rounded-md">
                     <div className="text-xs text-muted-foreground mb-1">4H</div>
-                    <Badge variant={Math.random() > 0.5 ? 'success' : 'destructive'} className="w-full">
+                    <Badge variant={Math.random() > 0.5 ? 'default' : 'destructive'} className="w-full">
                       {Math.random() > 0.5 ? 'Bullish' : 'Bearish'}
                     </Badge>
                   </div>
                   <div className="bg-secondary/10 p-2 rounded-md">
                     <div className="text-xs text-muted-foreground mb-1">1D</div>
-                    <Badge variant={Math.random() > 0.5 ? 'success' : 'destructive'} className="w-full">
+                    <Badge variant={Math.random() > 0.5 ? 'default' : 'destructive'} className="w-full">
                       {Math.random() > 0.5 ? 'Bullish' : 'Bearish'}
                     </Badge>
                   </div>
                   <div className="bg-secondary/10 p-2 rounded-md">
                     <div className="text-xs text-muted-foreground mb-1">1W</div>
-                    <Badge variant={Math.random() > 0.5 ? 'success' : 'destructive'} className="w-full">
+                    <Badge variant={Math.random() > 0.5 ? 'default' : 'destructive'} className="w-full">
                       {Math.random() > 0.5 ? 'Bullish' : 'Bearish'}
                     </Badge>
                   </div>
                   <div className="bg-secondary/10 p-2 rounded-md">
                     <div className="text-xs text-muted-foreground mb-1">1M</div>
-                    <Badge variant={Math.random() > 0.5 ? 'success' : 'destructive'} className="w-full">
+                    <Badge variant={Math.random() > 0.5 ? 'default' : 'destructive'} className="w-full">
                       {Math.random() > 0.5 ? 'Bullish' : 'Bearish'}
                     </Badge>
                   </div>
@@ -364,7 +364,7 @@ const DetailedTechnicalAnalysis: React.FC<DetailedTechnicalAnalysisProps> = ({ s
           </p>
           
           <div className="mt-4 text-sm">
-            <Badge className="mr-2" variant={analysis.sentiment === 'bullish' ? 'success' : 'destructive'}>
+            <Badge className="mr-2" variant={analysis.sentiment === 'bullish' ? 'default' : 'destructive'}>
               {analysis.sentiment === 'bullish' ? 'BULLISH OUTLOOK' : 'BEARISH OUTLOOK'}
             </Badge>
             <Badge variant="outline" className="bg-secondary/30">Confidence: {analysis.confidence}%</Badge>

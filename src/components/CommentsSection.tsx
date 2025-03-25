@@ -14,6 +14,7 @@ import { db } from '../config/firebase';
 interface Comment {
   id: string;
   text: string;
+  postId?: string;
   author: {
     id: string;
     name: string;
@@ -50,18 +51,7 @@ const CommentsSection = ({ postId }: CommentsProps) => {
           id: doc.id,
           ...doc.data(),
         } as Comment))
-        .filter(comment => {
-          try {
-            // Filter comments for this specific post
-            if (doc.data()?.postId === postId) {
-              return true;
-            }
-            return false;
-          } catch (error) {
-            console.error("Error filtering comments", error);
-            return false;
-          }
-        });
+        .filter(comment => comment.postId === postId);
       
       setComments(fetchedComments);
     }, (error) => {
