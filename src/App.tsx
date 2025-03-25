@@ -44,7 +44,7 @@ const App = () => (
               />
               <Route 
                 path="/blog/:slug" 
-                element={<BlogPost />}
+                element={<BlogPost />} 
               />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />

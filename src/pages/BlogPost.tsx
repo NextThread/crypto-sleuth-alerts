@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import Layout from '../components/Layout';
-import { blogPosts } from '../data/blogPosts';
+import { technicalAnalysisPosts, fundamentalAnalysisPosts, tradingStrategyPosts, cryptoForexPosts } from '../data/blogPosts';
 import { Calendar, User, MessageSquare, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -11,7 +12,16 @@ import { ensureValidImage } from './Blog';
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
-  const post = blogPosts.find((post) => post.slug === slug);
+  
+  // Combine all post categories to find the requested post
+  const allPosts = [
+    ...technicalAnalysisPosts,
+    ...fundamentalAnalysisPosts,
+    ...tradingStrategyPosts,
+    ...cryptoForexPosts
+  ];
+  
+  const post = allPosts.find((post) => post.slug === slug);
 
   if (!post) {
     return (
@@ -24,12 +34,15 @@ const BlogPost = () => {
     );
   }
 
+  // Convert post tags to keywords for metadata
+  const keywords = post.tags ? post.tags.join(', ') : '';
+
   return (
     <Layout>
       <Helmet>
         <title>{post.title} | ChartPulse Blog</title>
         <meta name="description" content={post.description} />
-        <meta name="keywords" content={post.keywords} />
+        <meta name="keywords" content={keywords} />
       </Helmet>
 
       <div className="container mx-auto px-4 py-8">
@@ -45,49 +58,32 @@ const BlogPost = () => {
               </div>
               <div className="flex items-center gap-1">
                 <User className="h-4 w-4" />
-                <span>{post.author}</span>
+                <span>{post.category}</span>
               </div>
               <div className="flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" />
-                <span>{post.comments} Comments</span>
+                <span>{Math.floor(Math.random() * 10) + 1} Comments</span>
               </div>
             </div>
           </header>
 
           <div className="relative">
             <img
-              src={ensureValidImage(post.imageUrl, 0)}
+              src={post.image}
               alt={post.title}
               className="w-full rounded-lg object-cover aspect-video"
             />
           </div>
 
           <section className="space-y-4 text-muted-foreground">
-            {post.content.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+            {post.content ? (
+              post.content.split('\n\n').map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))
+            ) : (
+              <p>{post.description}</p>
+            )}
           </section>
-
-          {post.references && post.references.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-2xl font-bold">References</h2>
-              <ul className="list-disc pl-5 text-muted-foreground">
-                {post.references.map((reference, index) => (
-                  <li key={index}>
-                    <a
-                      href={reference.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:underline"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                      {reference.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
 
           <CommentsSection postId={slug} />
         </article>
