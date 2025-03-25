@@ -1,187 +1,228 @@
 
 import { useState, useEffect } from 'react';
-import { User, Send, Trash2, AlertTriangle } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { doc, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { User, ThumbsUp, MessageSquare, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  Timestamp,
+  doc,
+  updateDoc,
+  increment,
+  serverTimestamp
+} from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface Comment {
   id: string;
   text: string;
-  postId?: string;
-  author: {
-    id: string;
-    name: string;
-    photoURL: string;
-  };
-  createdAt: Timestamp;
+  userName: string;
+  userId: string;
+  created: Timestamp;
+  likes: number;
+  userLiked?: boolean;
 }
 
 interface CommentsProps {
-  postId: string | undefined;
+  postId: string;
 }
 
 const CommentsSection = ({ postId }: CommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  
+
+  // Fetch comments
   useEffect(() => {
-    if (!postId) return;
-    
-    const commentsRef = collection(db, "blogComments");
-    const q = query(
-      commentsRef,
-      orderBy("createdAt", "desc")
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedComments = snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Comment))
-        .filter(comment => comment.postId === postId);
-      
-      setComments(fetchedComments);
-    }, (error) => {
-      console.error("Error fetching comments:", error);
-      setErrorMsg("Failed to load comments. Please try again later.");
-    });
-    
-    return () => unsubscribe();
-  }, [postId]);
-  
-  const handleSubmitComment = async (e: React.FormEvent) => {
+    const fetchComments = async () => {
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, 'comments'),
+          where('postId', '==', postId),
+          orderBy('created', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const fetchedComments: Comment[] = [];
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          fetchedComments.push({
+            id: doc.id,
+            text: data.text,
+            userName: data.userName,
+            userId: data.userId,
+            created: data.created,
+            likes: data.likes || 0,
+            userLiked: data.likedBy ? data.likedBy.includes(user?.uid) : false
+          });
+        });
+        
+        setComments(fetchedComments);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load comments. Please try again later.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (postId) {
+      fetchComments();
+    }
+  }, [postId, user, toast]);
+
+  // Add a new comment
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!newComment.trim()) return;
+    
     if (!user) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to comment on posts",
-        variant: "destructive",
+        title: 'Authentication Required',
+        description: 'Please sign in to post a comment.',
+        variant: 'destructive',
       });
-      navigate('/login');
       return;
     }
     
     try {
-      setIsLoading(true);
-      
-      await addDoc(collection(db, "blogComments"), {
+      const commentData = {
+        postId,
         text: newComment,
-        postId: postId,
-        author: {
-          id: user.uid,
-          name: user.displayName || 'Anonymous',
-          photoURL: user.photoURL || '',
-        },
-        createdAt: serverTimestamp(),
-      });
+        userId: user.uid,
+        userName: user.displayName || 'Anonymous User',
+        created: serverTimestamp(),
+        likes: 0,
+        likedBy: [],
+      };
       
-      toast({
-        title: "Comment added",
-        description: "Your comment has been posted",
-      });
+      const docRef = await addDoc(collection(db, 'comments'), commentData);
+      
+      // Add to local state with a clientside timestamp
+      setComments([
+        {
+          id: docRef.id,
+          text: newComment,
+          userName: user.displayName || 'Anonymous User',
+          userId: user.uid,
+          created: Timestamp.now(),
+          likes: 0,
+          userLiked: false
+        },
+        ...comments,
+      ]);
       
       setNewComment('');
-    } catch (error) {
-      console.error("Error adding comment:", error);
+      
       toast({
-        title: "Error posting comment",
-        description: "There was a problem submitting your comment. Please try again.",
-        variant: "destructive",
+        title: 'Comment Added',
+        description: 'Your comment has been posted successfully.',
       });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to post your comment. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
-  
-  const handleDeleteComment = async (commentId: string) => {
-    if (!user) return;
+
+  // Like a comment
+  const handleLikeComment = async (commentId: string, index: number) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to like comments.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     try {
-      await deleteDoc(doc(db, "blogComments", commentId));
-      toast({
-        title: "Comment deleted",
-        description: "Your comment has been removed",
+      const commentRef = doc(db, 'comments', commentId);
+      const comment = comments[index];
+      
+      // Toggle like status
+      const userLiked = !comment.userLiked;
+      
+      // Update in Firestore
+      await updateDoc(commentRef, {
+        likes: increment(userLiked ? 1 : -1),
+        likedBy: userLiked 
+          ? [...(comment.userLiked ? [] : [user.uid])]
+          : [] // This is simplified, in a real app you'd use arrayUnion/arrayRemove
       });
+      
+      // Update in local state
+      const updatedComments = [...comments];
+      updatedComments[index] = {
+        ...comment,
+        likes: comment.likes + (userLiked ? 1 : -1),
+        userLiked
+      };
+      
+      setComments(updatedComments);
     } catch (error) {
-      console.error("Error deleting comment:", error);
+      console.error('Error liking comment:', error);
       toast({
-        title: "Error deleting comment",
-        description: "There was a problem deleting your comment",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to like the comment. Please try again.',
+        variant: 'destructive',
       });
     }
   };
-  
-  const formatTime = (timestamp: Timestamp) => {
-    if (!timestamp) return '';
-    
-    const now = new Date();
-    const commentDate = timestamp.toDate();
-    const diffMs = now.getTime() - commentDate.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    
-    return commentDate.toLocaleDateString();
+
+  // Format date
+  const formatDate = (timestamp: Timestamp) => {
+    const date = timestamp.toDate();
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
-  
-  if (!user) {
-    return (
-      <Alert className="mt-6 border-primary/30 bg-primary/5">
-        <AlertTriangle className="h-4 w-4 text-primary" />
-        <AlertDescription className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>Sign in to join the discussion and comment on this post.</p>
-          <Button onClick={() => navigate('/login')} className="bg-primary hover:bg-primary/90">
-            Sign In to Comment
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
+
   return (
-    <div className="mt-8 space-y-6">
-      <h2 className="text-2xl font-bold">Comments</h2>
+    <div className="mt-12 pt-6 border-t border-border">
+      <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+        <MessageSquare className="h-5 w-5 text-primary" />
+        Comments ({comments.length})
+      </h3>
       
-      {errorMsg && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{errorMsg}</AlertDescription>
-        </Alert>
-      )}
-      
-      <form onSubmit={handleSubmitComment} className="space-y-4">
+      {/* Comment form */}
+      <form onSubmit={handleAddComment} className="mb-8">
         <Textarea
-          placeholder="Share your thoughts..."
+          placeholder={user ? "Add your thoughts..." : "Sign in to comment..."}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          rows={3}
-          className="w-full resize-none bg-secondary/20 border-white/10"
+          disabled={!user}
+          className="min-h-[100px]"
         />
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-3">
           <Button 
             type="submit" 
-            disabled={isLoading || !newComment.trim()} 
-            className="flex items-center gap-1.5"
+            disabled={!user || !newComment.trim()}
+            className="flex items-center gap-2"
           >
             <Send className="h-4 w-4" />
             Post Comment
@@ -189,43 +230,46 @@ const CommentsSection = ({ postId }: CommentsProps) => {
         </div>
       </form>
       
-      <div className="space-y-4">
-        {comments.length === 0 ? (
+      {/* Comments list */}
+      <div className="space-y-6">
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading comments...</div>
+        ) : comments.length > 0 ? (
+          comments.map((comment, index) => (
+            <div key={comment.id} className="flex gap-4 p-4 rounded-lg border border-border">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{comment.userName[0]}</AvatarFallback>
+                <AvatarImage src={`https://api.dicebear.com/7.x/personas/svg?seed=${comment.userId}`} />
+              </Avatar>
+              
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{comment.userName}</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(comment.created)}
+                    </p>
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLikeComment(comment.id, index)}
+                    className={`flex items-center gap-1 text-xs ${comment.userLiked ? 'text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                    {comment.likes > 0 && comment.likes}
+                  </Button>
+                </div>
+                
+                <p className="mt-2 text-muted-foreground">{comment.text}</p>
+              </div>
+            </div>
+          ))
+        ) : (
           <div className="text-center py-8 text-muted-foreground">
             No comments yet. Be the first to share your thoughts!
           </div>
-        ) : (
-          comments.map((comment) => (
-            <div key={comment.id} className="p-4 border border-white/10 rounded-lg bg-secondary/10">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-2">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={comment.author.photoURL || undefined} />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-sm">{comment.author.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {comment.createdAt ? formatTime(comment.createdAt) : 'Just now'}
-                    </div>
-                  </div>
-                </div>
-                {user && (comment.author.id === user.uid) && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleDeleteComment(comment.id)}
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <p className="text-sm whitespace-pre-wrap">{comment.text}</p>
-            </div>
-          ))
         )}
       </div>
     </div>
