@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -6,6 +5,7 @@ import CryptoSearch from '../components/CryptoSearch';
 import CryptoChart from '../components/CryptoChart';
 import PriceMetrics from '../components/PriceMetrics';
 import TechnicalAnalysis from '../components/TechnicalAnalysis';
+import TechnicalSummary from '../components/TechnicalSummary';
 import TradeDetails from '../components/TradeDetails';
 import ChartControls, { ChartControlsState } from '../components/ChartControls';
 import CryptoNews from '../components/CryptoNews';
@@ -346,6 +346,14 @@ const Index = () => {
             <ChartControls onControlsChange={handleChartControlsChange} />
             <TechnicalAnalysis symbol={symbol} interval={interval} />
           </div>
+        </div>
+        
+        <div className="mb-10 animate-fade-in">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <BarChart2 className="h-5 w-5 text-primary" />
+            In-Depth Technical Analysis
+          </h2>
+          <TechnicalSummary symbol={symbol} interval={interval} />
         </div>
         
         <div className="mb-10">
