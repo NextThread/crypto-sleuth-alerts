@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen } from 'lucide-react';
+import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -111,9 +111,21 @@ const Layout = ({ children }: LayoutProps) => {
       
       <footer className="mt-auto w-full border-t border-white/10 py-6 backdrop-blur-sm bg-background/30">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} <span className="text-primary font-medium">ChartPulse</span>. All rights reserved.
-          </p>
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} <span className="text-primary font-medium">ChartPulse</span>. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4">
+              <Link to="/privacy-policy" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <Shield className="h-3 w-3" />
+                Privacy Policy
+              </Link>
+              <Link to="/terms-and-conditions" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <FileText className="h-3 w-3" />
+                Terms & Conditions
+              </Link>
+            </div>
+          </div>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <span className="text-xs text-muted-foreground bg-secondary/40 px-3 py-1.5 rounded-full flex items-center gap-1.5">
               <BarChart2 className="h-3 w-3 text-primary" />

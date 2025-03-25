@@ -13,6 +13,8 @@ import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +60,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
