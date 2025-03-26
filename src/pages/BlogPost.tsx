@@ -2,21 +2,52 @@
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import Layout from '../components/Layout';
-import { Calendar, User, MessageSquare, ChevronLeft, Tag, Share2 } from 'lucide-react';
+import { Calendar, User, MessageSquare, ChevronLeft, Tag, Share2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import CommentsSection from '../components/CommentsSection';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-// Import the individual blog categories instead of trying to use a potentially problematic merged array
-import { 
-  technicalAnalysisPosts, 
-  fundamentalAnalysisPosts, 
-  tradingStrategyPosts, 
-  cryptoForexPosts 
-} from '../data/blogPosts';
+// Try to safely import blog data
+let technicalAnalysisPosts = [];
+let fundamentalAnalysisPosts = [];
+let tradingStrategyPosts = [];
+let cryptoForexPosts = [];
+let allPosts = [];
+
+try {
+  // Import the individual blog categories instead of trying to use a potentially problematic merged array
+  const blogData = require('../data/blogPosts');
+  
+  technicalAnalysisPosts = Array.isArray(blogData.technicalAnalysisPosts) ? blogData.technicalAnalysisPosts : [];
+  fundamentalAnalysisPosts = Array.isArray(blogData.fundamentalAnalysisPosts) ? blogData.fundamentalAnalysisPosts : [];
+  tradingStrategyPosts = Array.isArray(blogData.tradingStrategyPosts) ? blogData.tradingStrategyPosts : [];
+  cryptoForexPosts = Array.isArray(blogData.cryptoForexPosts) ? blogData.cryptoForexPosts : [];
+  
+  // Safely combine all post categories
+  allPosts = [
+    ...technicalAnalysisPosts,
+    ...fundamentalAnalysisPosts,
+    ...tradingStrategyPosts,
+    ...cryptoForexPosts
+  ]
+  .filter(Boolean) // Filter out any undefined values
+  .filter(post => {
+    // Filter out posts with invalid structure
+    return (
+      post && 
+      typeof post === 'object' && 
+      typeof post.slug === 'string' && 
+      post.slug.trim() !== ''
+    );
+  });
+  
+  console.log(`Successfully loaded ${allPosts.length} blog posts`);
+} catch (error) {
+  console.error("Error loading blog posts:", error);
+}
 
 // Safe image handling function
 const ensureValidImage = (imageUrl: string | undefined, index: number) => {
@@ -32,29 +63,191 @@ const ensureValidImage = (imageUrl: string | undefined, index: number) => {
     "https://images.unsplash.com/photo-1614028674026-a65e31bfd27c"
   ];
   
-  if (!imageUrl || imageUrl.trim() === '' || imageUrl.includes('undefined')) {
-    return fallbackImages[index % fallbackImages.length];
+  if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '' || imageUrl.includes('undefined')) {
+    return fallbackImages[Math.abs(index) % fallbackImages.length];
   }
   
   return imageUrl;
 };
 
+// Safe date formatting
+const formatDate = (dateString: string | Date | undefined) => {
+  try {
+    if (!dateString) {
+      return format(new Date(), 'MMMM dd, yyyy', { locale: enUS });
+    }
+    return format(new Date(dateString), 'MMMM dd, yyyy', { locale: enUS });
+  } catch (error) {
+    return format(new Date(), 'MMMM dd, yyyy', { locale: enUS });
+  }
+};
+
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
   
   useEffect(() => {
     window.scrollTo(0, 0);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (!slug) {
+        throw new Error("No slug provided");
+      }
+      
+      // Find the post with the matching slug
+      const foundPost = allPosts.find((p) => p?.slug === slug);
+      
+      if (!foundPost) {
+        throw new Error("Post not found");
+      }
+      
+      setPost(foundPost);
+      
+      // Find related posts (same category, different slug)
+      const related = allPosts
+        .filter(p => p && p.slug !== slug && p.category === foundPost.category)
+        .slice(0, 2);
+      
+      setRelatedPosts(related);
+    } catch (err: any) {
+      console.error("Error loading blog post:", err);
+      setError(err.message || "Failed to load blog post");
+    } finally {
+      setLoading(false);
+    }
   }, [slug]);
 
-  // Safely combine all post categories
-  const allPosts = [
-    ...technicalAnalysisPosts || [],
-    ...fundamentalAnalysisPosts || [],
-    ...tradingStrategyPosts || [],
-    ...cryptoForexPosts || []
-  ].filter(Boolean); // Filter out any undefined values
-  
-  const post = allPosts.find((post) => post?.slug === slug);
+  // Enhanced formatContent function with highlight support for SEO terms
+  const formatContent = (content: string) => {
+    if (!content) return null;
+    
+    // Define key SEO terms for trading/finance to highlight
+    const seoHighlightTerms = [
+      'technical analysis', 'trend', 'support level', 'resistance level', 
+      'moving average', 'MACD', 'RSI', 'volume', 'candlestick', 'breakout',
+      'momentum', 'volatility', 'bullish', 'bearish', 'divergence',
+      'fundamentals', 'market cap', 'P/E ratio', 'EPS', 'trading strategy',
+      'risk management', 'portfolio', 'diversification', 'stop-loss',
+      'cryptocurrency', 'blockchain', 'forex', 'signal', 'indicator',
+      'chart pattern', 'price action', 'market sentiment', 'overbought',
+      'oversold', 'consolidation', 'fibonacci', 'trading psychology',
+      'liquidity', 'hedge', 'leverage', 'margin', 'swing trading',
+      'day trading', 'position trading', 'scalping', 'trend following'
+    ];
+    
+    // Create a regex pattern for all terms (case insensitive)
+    const pattern = new RegExp(`\\b(${seoHighlightTerms.join('|')})\\b`, 'gi');
+    
+    // Safe parsing of content
+    try {
+      return content.split('\n\n').map((paragraph, index) => {
+        // Handle headers (lines starting with ###)
+        if (paragraph.startsWith('###')) {
+          const headerText = paragraph.replace('###', '').trim();
+          // Add subtle highlighting to headers
+          return (
+            <h3 key={index} className="text-xl font-bold mt-8 mb-4 text-primary/90">
+              {headerText}
+            </h3>
+          );
+        }
+        
+        // Handle subheaders (lines starting with **)
+        if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
+          const subheaderText = paragraph.replace(/^\*\*|\*\*$/g, '').trim();
+          return (
+            <h4 key={index} className="text-lg font-semibold mt-6 mb-3 text-primary/80">
+              {subheaderText}
+            </h4>
+          );
+        }
+        
+        // Handle bullet points
+        if (paragraph.startsWith('- ')) {
+          return (
+            <ul key={index} className="list-disc pl-6 mt-2 mb-4">
+              {paragraph.split('\n- ').map((item, i) => {
+                const bulletText = item.replace(/^- /, '');
+                // Highlight SEO terms in bullet points
+                const highlightedBullet = bulletText.replace(pattern, match => 
+                  `<span class="font-medium text-primary">${match}</span>`
+                );
+                return (
+                  <li 
+                    key={i} 
+                    className="mb-1" 
+                    dangerouslySetInnerHTML={{ __html: highlightedBullet }}
+                  />
+                );
+              })}
+            </ul>
+          );
+        }
+        
+        // Regular paragraphs with SEO term highlighting
+        const highlightedParagraph = paragraph.replace(pattern, match => 
+          `<span class="font-medium text-primary">${match}</span>`
+        );
+        
+        return (
+          <p 
+            key={index} 
+            className="mb-4" 
+            dangerouslySetInnerHTML={{ __html: highlightedParagraph }}
+          />
+        );
+      });
+    } catch (err) {
+      console.error("Error formatting content:", err);
+      return <p className="text-muted-foreground">Content could not be displayed properly.</p>;
+    }
+  };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-1/4 bg-muted rounded"></div>
+            <div className="h-10 w-3/4 bg-muted rounded"></div>
+            <div className="h-6 w-2/4 bg-muted rounded"></div>
+            <div className="h-64 bg-muted rounded"></div>
+            <div className="space-y-2">
+              <div className="h-4 bg-muted rounded"></div>
+              <div className="h-4 bg-muted rounded"></div>
+              <div className="h-4 w-5/6 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-destructive/10 p-6 rounded-lg border border-destructive/20 flex flex-col items-center justify-center text-center">
+            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Post Not Found</h1>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Link to="/blog">
+              <Button variant="outline" className="mt-2">
+                <ChevronLeft className="mr-2 h-4 w-4" /> Back to Blog
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!post) {
     return (
@@ -72,90 +265,21 @@ const BlogPost = () => {
     );
   }
 
-  // Convert post tags to keywords for metadata
-  const keywords = post.tags ? post.tags.join(', ') : '';
-
-  // Enhanced formatContent function with highlight support for SEO terms
-  const formatContent = (content: string) => {
-    if (!content) return null;
-    
-    // Define key SEO terms for trading/finance to highlight
-    const seoHighlightTerms = [
-      'technical analysis', 'trend', 'support level', 'resistance level', 
-      'moving average', 'MACD', 'RSI', 'volume', 'candlestick', 'breakout',
-      'momentum', 'volatility', 'bullish', 'bearish', 'divergence',
-      'fundamentals', 'market cap', 'P/E ratio', 'EPS', 'trading strategy',
-      'risk management', 'portfolio', 'diversification', 'stop-loss',
-      'cryptocurrency', 'blockchain', 'forex', 'signal', 'indicator'
-    ];
-    
-    // Create a regex pattern for all terms (case insensitive)
-    const pattern = new RegExp(`\\b(${seoHighlightTerms.join('|')})\\b`, 'gi');
-    
-    return content.split('\n\n').map((paragraph, index) => {
-      // Handle headers (lines starting with ###)
-      if (paragraph.startsWith('###')) {
-        const headerText = paragraph.replace('###', '').trim();
-        // Add subtle highlighting to headers
-        return (
-          <h3 key={index} className="text-xl font-bold mt-8 mb-4 text-primary/90">
-            {headerText}
-          </h3>
-        );
-      }
-      
-      // Handle subheaders (lines starting with **)
-      if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
-        const subheaderText = paragraph.replace(/^\*\*|\*\*$/g, '').trim();
-        return (
-          <h4 key={index} className="text-lg font-semibold mt-6 mb-3 text-primary/80">
-            {subheaderText}
-          </h4>
-        );
-      }
-      
-      // Handle bullet points
-      if (paragraph.startsWith('- ')) {
-        return (
-          <ul key={index} className="list-disc pl-6 mt-2 mb-4">
-            {paragraph.split('\n- ').map((item, i) => {
-              const bulletText = item.replace(/^- /, '');
-              // Highlight SEO terms in bullet points
-              const highlightedBullet = bulletText.replace(pattern, match => 
-                `<span class="font-medium text-primary">${match}</span>`
-              );
-              return (
-                <li 
-                  key={i} 
-                  className="mb-1" 
-                  dangerouslySetInnerHTML={{ __html: highlightedBullet }}
-                />
-              );
-            })}
-          </ul>
-        );
-      }
-      
-      // Regular paragraphs with SEO term highlighting
-      const highlightedParagraph = paragraph.replace(pattern, match => 
-        `<span class="font-medium text-primary">${match}</span>`
-      );
-      
-      return (
-        <p 
-          key={index} 
-          className="mb-4" 
-          dangerouslySetInnerHTML={{ __html: highlightedParagraph }}
-        />
-      );
-    });
-  };
+  // Get post metadata safely
+  const postTitle = post.title || "Untitled Post";
+  const postDescription = post.description || "No description available";
+  const postCategory = post.category || "Uncategorized";
+  const postImage = ensureValidImage(post.image, parseInt(post.slug.split('-')[0] || '0', 10));
+  const postDate = post.date || new Date();
+  const postReadingTime = post.readingTime || "5 min read";
+  const postTags = Array.isArray(post.tags) ? post.tags : [];
+  const keywords = postTags.join(', ');
 
   return (
     <Layout>
       <Helmet>
-        <title>{post.title} | ChartPulse Blog</title>
-        <meta name="description" content={post.description} />
+        <title>{postTitle} | ChartPulse Blog</title>
+        <meta name="description" content={postDescription} />
         <meta name="keywords" content={keywords} />
       </Helmet>
 
@@ -169,25 +293,25 @@ const BlogPost = () => {
           <header className="space-y-4">
             <div className="flex flex-wrap gap-2 mb-2">
               <Badge className="bg-primary/20 text-primary hover:bg-primary/30">
-                {post.category}
+                {postCategory}
               </Badge>
-              {post.tags && post.tags.slice(0, 3).map((tag) => (
+              {postTags.slice(0, 3).map((tag) => (
                 <Badge key={tag} variant="outline" className="bg-secondary/10">
                   {tag}
                 </Badge>
               ))}
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-bold">{post.title}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">{postTitle}</h1>
             <p className="text-lg text-muted-foreground">
-              {post.description}
+              {postDescription}
             </p>
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-2 border-t border-border">
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <time dateTime={post.date}>
-                  {format(new Date(post.date || new Date()), 'MMMM dd, yyyy', { locale: enUS })}
+                <time dateTime={String(postDate)}>
+                  {formatDate(postDate)}
                 </time>
               </div>
               <div className="flex items-center gap-1">
@@ -200,15 +324,15 @@ const BlogPost = () => {
               </div>
               <div className="flex items-center gap-1">
                 <Tag className="h-4 w-4" />
-                <span>{post.readingTime}</span>
+                <span>{postReadingTime}</span>
               </div>
             </div>
           </header>
 
           <div className="relative">
             <img
-              src={ensureValidImage(post.image, parseInt(post.slug.split('-')[0] || '0', 10))}
-              alt={post.title}
+              src={postImage}
+              alt={postTitle}
               className="w-full rounded-lg object-cover aspect-video shadow-md"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -221,13 +345,13 @@ const BlogPost = () => {
             {post.content ? (
               formatContent(post.content)
             ) : (
-              <p className="text-muted-foreground">{post.description}</p>
+              <p className="text-muted-foreground">{postDescription}</p>
             )}
           </section>
           
           <div className="flex justify-between items-center border-t border-b border-border py-4 my-8">
             <div className="flex flex-wrap gap-2">
-              {post.tags && post.tags.map((tag) => (
+              {postTags.map((tag) => (
                 <Badge key={tag} variant="outline" className="bg-secondary/10">
                   {tag}
                 </Badge>
@@ -241,37 +365,45 @@ const BlogPost = () => {
 
           <CommentsSection postId={slug || ""} />
           
-          <div className="mt-10 pt-6 border-t border-border">
-            <h3 className="text-xl font-bold mb-4">Related Articles</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {allPosts
-                .filter(p => p && p.slug !== slug && p.category === post.category)
-                .slice(0, 2)
-                .map(relatedPost => (
-                  <Link key={relatedPost.slug} to={`/blog/${relatedPost.slug}`} className="group">
-                    <div className="flex gap-4 items-start">
-                      <img 
-                        src={ensureValidImage(relatedPost.image, parseInt(relatedPost.slug.split('-')[0] || '0', 10))} 
-                        alt={relatedPost.title} 
-                        className="w-20 h-20 object-cover rounded-md"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = ensureValidImage("", Math.floor(Math.random() * 9));
-                        }}
-                      />
-                      <div>
-                        <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-2">
-                          {relatedPost.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {relatedPost.readingTime}
-                        </p>
+          {relatedPosts.length > 0 && (
+            <div className="mt-10 pt-6 border-t border-border">
+              <h3 className="text-xl font-bold mb-4">Related Articles</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {relatedPosts.map(relatedPost => {
+                  if (!relatedPost) return null;
+                  
+                  const relatedPostImage = ensureValidImage(
+                    relatedPost.image, 
+                    parseInt(relatedPost.slug.split('-')[0] || '0', 10)
+                  );
+                  
+                  return (
+                    <Link key={relatedPost.slug} to={`/blog/${relatedPost.slug}`} className="group">
+                      <div className="flex gap-4 items-start">
+                        <img 
+                          src={relatedPostImage} 
+                          alt={relatedPost.title} 
+                          className="w-20 h-20 object-cover rounded-md"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = ensureValidImage("", Math.floor(Math.random() * 9));
+                          }}
+                        />
+                        <div>
+                          <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-2">
+                            {relatedPost.title || "Untitled Post"}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {relatedPost.readingTime || "5 min read"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </article>
       </div>
     </Layout>
