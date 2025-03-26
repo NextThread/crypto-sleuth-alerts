@@ -3,147 +3,111 @@ import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import Layout from '../components/Layout';
 import { Calendar, User, MessageSquare, ChevronLeft, Tag, Share2, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import CommentsSection from '../components/CommentsSection';
 import { useEffect, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useSafeBlogData, ensureValidImage, formatDate, BlogPost as BlogPostType } from '../utils/blogDataUtils';
 
-// Define interface for blog post data
-interface BlogPost {
-  title?: string;
-  description?: string;
-  slug?: string;
-  date?: string | Date;
-  readingTime?: string;
-  category?: string;
-  tags?: string[];
-  image?: string;
-  content?: string;
-  author?: string;
-}
-
-// Create a safe method to load blog data
-const useSafeBlogData = () => {
-  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const loadBlogData = async () => {
-      try {
-        // Use dynamic import with error handling
-        const blogDataModule = await import('../data/blogPosts').catch(error => {
-          console.error("Failed to import blog posts module:", error);
-          throw new Error("Blog data could not be loaded.");
-        });
-
-        // Check each category and combine them safely
-        const technicalAnalysisPosts = Array.isArray(blogDataModule.technicalAnalysisPosts) 
-          ? blogDataModule.technicalAnalysisPosts 
-          : [];
-          
-        const fundamentalAnalysisPosts = Array.isArray(blogDataModule.fundamentalAnalysisPosts) 
-          ? blogDataModule.fundamentalAnalysisPosts 
-          : [];
-          
-        const tradingStrategyPosts = Array.isArray(blogDataModule.tradingStrategyPosts) 
-          ? blogDataModule.tradingStrategyPosts 
-          : [];
-          
-        const cryptoForexPosts = Array.isArray(blogDataModule.cryptoForexPosts) 
-          ? blogDataModule.cryptoForexPosts 
-          : [];
-
-        // Combine and filter all posts
-        const combinedPosts = [
-          ...technicalAnalysisPosts,
-          ...fundamentalAnalysisPosts,
-          ...tradingStrategyPosts,
-          ...cryptoForexPosts
-        ]
-        .filter(Boolean) // Remove any undefined/null entries
-        .filter(post => {
-          // Validate post structure
-          return (
-            post && 
-            typeof post === 'object' && 
-            typeof post.slug === 'string' && 
-            post.slug.trim() !== ''
-          );
-        });
-
-        setAllPosts(combinedPosts);
-        console.log(`Successfully loaded ${combinedPosts.length} blog posts`);
-        
-        if (combinedPosts.length === 0) {
-          toast({
-            title: "No blog posts found",
-            description: "The blog data appears to be empty or invalid.",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error("Error processing blog data:", error);
-        setLoadError((error as Error).message || "Failed to load blog data");
-        toast({
-          title: "Error loading blog posts",
-          description: "Please try refreshing the page.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
-    loadBlogData();
-  }, [toast]);
-
-  return { allPosts, isLoaded, loadError };
-};
-
-// Safe image handling function
-const ensureValidImage = (imageUrl: string | undefined, index: number) => {
-  const fallbackImages = [
-    "https://images.unsplash.com/photo-1518770660439-4636190af475",
-    "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
-    "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
-    "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-    "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3",
-    "https://images.unsplash.com/photo-1642790551116-18e150f248e5",
-    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485",
-    "https://images.unsplash.com/photo-1560472355-536de3962603",
-    "https://images.unsplash.com/photo-1614028674026-a65e31bfd27c"
+// Enhanced formatContent function with highlight support for SEO terms
+const formatContent = (content: string) => {
+  if (!content) return null;
+  
+  // Define key SEO terms for trading/finance to highlight
+  const seoHighlightTerms = [
+    'technical analysis', 'trend', 'support level', 'resistance level', 
+    'moving average', 'MACD', 'RSI', 'volume', 'candlestick', 'breakout',
+    'momentum', 'volatility', 'bullish', 'bearish', 'divergence',
+    'fundamentals', 'market cap', 'P/E ratio', 'EPS', 'trading strategy',
+    'risk management', 'portfolio', 'diversification', 'stop-loss',
+    'cryptocurrency', 'blockchain', 'forex', 'signal', 'indicator',
+    'chart pattern', 'price action', 'market sentiment', 'overbought',
+    'oversold', 'consolidation', 'fibonacci', 'trading psychology',
+    'liquidity', 'hedge', 'leverage', 'margin', 'swing trading',
+    'day trading', 'position trading', 'scalping', 'trend following',
+    'fibonacci retracement', 'relative strength', 'divergence', 'consolidation',
+    'breakout strategy', 'pivot points', 'head and shoulders pattern',
+    'double top', 'double bottom', 'cup and handle', 'flag pattern',
+    'pennant pattern', 'wedge pattern', 'triangle pattern', 'harmonic pattern',
+    'elliot wave theory', 'wyckoff method', 'orderbook analysis', 'liquidity',
+    'smart money', 'institutional trading', 'accumulation', 'distribution',
+    'gap trading', 'opening range breakout', 'options trading', 'derivatives'
   ];
   
-  if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '' || imageUrl.includes('undefined')) {
-    return fallbackImages[Math.abs(index) % fallbackImages.length];
-  }
+  // Create a regex pattern for all terms (case insensitive)
+  const pattern = new RegExp(`\\b(${seoHighlightTerms.join('|')})\\b`, 'gi');
   
-  return imageUrl;
-};
-
-// Safe date formatting
-const formatDate = (dateString: string | Date | undefined) => {
+  // Safe parsing of content
   try {
-    if (!dateString) {
-      return format(new Date(), 'MMMM dd, yyyy', { locale: enUS });
-    }
-    return format(new Date(dateString), 'MMMM dd, yyyy', { locale: enUS });
-  } catch (error) {
-    return format(new Date(), 'MMMM dd, yyyy', { locale: enUS });
+    return content.split('\n\n').map((paragraph, index) => {
+      // Handle headers (lines starting with ###)
+      if (paragraph.startsWith('###')) {
+        const headerText = paragraph.replace('###', '').trim();
+        // Add subtle highlighting to headers
+        return (
+          <h3 key={index} className="text-xl font-bold mt-8 mb-4 text-primary/90">
+            {headerText}
+          </h3>
+        );
+      }
+      
+      // Handle subheaders (lines starting with **)
+      if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
+        const subheaderText = paragraph.replace(/^\*\*|\*\*$/g, '').trim();
+        return (
+          <h4 key={index} className="text-lg font-semibold mt-6 mb-3 text-primary/80">
+            {subheaderText}
+          </h4>
+        );
+      }
+      
+      // Handle bullet points
+      if (paragraph.startsWith('- ')) {
+        return (
+          <ul key={index} className="list-disc pl-6 mt-2 mb-4">
+            {paragraph.split('\n- ').map((item, i) => {
+              const bulletText = item.replace(/^- /, '');
+              // Highlight SEO terms in bullet points
+              const highlightedBullet = bulletText.replace(pattern, match => 
+                `<span class="font-medium text-primary">${match}</span>`
+              );
+              return (
+                <li 
+                  key={i} 
+                  className="mb-1" 
+                  dangerouslySetInnerHTML={{ __html: highlightedBullet }}
+                />
+              );
+            })}
+          </ul>
+        );
+      }
+      
+      // Regular paragraphs with SEO term highlighting
+      const highlightedParagraph = paragraph.replace(pattern, match => 
+        `<span class="font-medium text-primary">${match}</span>`
+      );
+      
+      return (
+        <p 
+          key={index} 
+          className="mb-4" 
+          dangerouslySetInnerHTML={{ __html: highlightedParagraph }}
+        />
+      );
+    });
+  } catch (err) {
+    console.error("Error formatting content:", err);
+    return <p className="text-muted-foreground">Content could not be displayed properly.</p>;
   }
 };
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
-  const [post, setPost] = useState<BlogPost | null>(null);
+  const [post, setPost] = useState<BlogPostType | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPostType[]>([]);
   const { allPosts, isLoaded, loadError } = useSafeBlogData();
   
   useEffect(() => {
@@ -188,99 +152,6 @@ const BlogPost = () => {
       setLoading(false);
     }
   }, [slug, allPosts, isLoaded, loadError]);
-
-  // Enhanced formatContent function with highlight support for SEO terms
-  const formatContent = (content: string) => {
-    if (!content) return null;
-    
-    // Define key SEO terms for trading/finance to highlight
-    const seoHighlightTerms = [
-      'technical analysis', 'trend', 'support level', 'resistance level', 
-      'moving average', 'MACD', 'RSI', 'volume', 'candlestick', 'breakout',
-      'momentum', 'volatility', 'bullish', 'bearish', 'divergence',
-      'fundamentals', 'market cap', 'P/E ratio', 'EPS', 'trading strategy',
-      'risk management', 'portfolio', 'diversification', 'stop-loss',
-      'cryptocurrency', 'blockchain', 'forex', 'signal', 'indicator',
-      'chart pattern', 'price action', 'market sentiment', 'overbought',
-      'oversold', 'consolidation', 'fibonacci', 'trading psychology',
-      'liquidity', 'hedge', 'leverage', 'margin', 'swing trading',
-      'day trading', 'position trading', 'scalping', 'trend following',
-      'fibonacci retracement', 'relative strength', 'divergence', 'consolidation',
-      'breakout strategy', 'pivot points', 'head and shoulders pattern',
-      'double top', 'double bottom', 'cup and handle', 'flag pattern',
-      'pennant pattern', 'wedge pattern', 'triangle pattern', 'harmonic pattern',
-      'elliot wave theory', 'wyckoff method', 'orderbook analysis', 'liquidity',
-      'smart money', 'institutional trading', 'accumulation', 'distribution',
-      'gap trading', 'opening range breakout', 'options trading', 'derivatives'
-    ];
-    
-    // Create a regex pattern for all terms (case insensitive)
-    const pattern = new RegExp(`\\b(${seoHighlightTerms.join('|')})\\b`, 'gi');
-    
-    // Safe parsing of content
-    try {
-      return content.split('\n\n').map((paragraph, index) => {
-        // Handle headers (lines starting with ###)
-        if (paragraph.startsWith('###')) {
-          const headerText = paragraph.replace('###', '').trim();
-          // Add subtle highlighting to headers
-          return (
-            <h3 key={index} className="text-xl font-bold mt-8 mb-4 text-primary/90">
-              {headerText}
-            </h3>
-          );
-        }
-        
-        // Handle subheaders (lines starting with **)
-        if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
-          const subheaderText = paragraph.replace(/^\*\*|\*\*$/g, '').trim();
-          return (
-            <h4 key={index} className="text-lg font-semibold mt-6 mb-3 text-primary/80">
-              {subheaderText}
-            </h4>
-          );
-        }
-        
-        // Handle bullet points
-        if (paragraph.startsWith('- ')) {
-          return (
-            <ul key={index} className="list-disc pl-6 mt-2 mb-4">
-              {paragraph.split('\n- ').map((item, i) => {
-                const bulletText = item.replace(/^- /, '');
-                // Highlight SEO terms in bullet points
-                const highlightedBullet = bulletText.replace(pattern, match => 
-                  `<span class="font-medium text-primary">${match}</span>`
-                );
-                return (
-                  <li 
-                    key={i} 
-                    className="mb-1" 
-                    dangerouslySetInnerHTML={{ __html: highlightedBullet }}
-                  />
-                );
-              })}
-            </ul>
-          );
-        }
-        
-        // Regular paragraphs with SEO term highlighting
-        const highlightedParagraph = paragraph.replace(pattern, match => 
-          `<span class="font-medium text-primary">${match}</span>`
-        );
-        
-        return (
-          <p 
-            key={index} 
-            className="mb-4" 
-            dangerouslySetInnerHTML={{ __html: highlightedParagraph }}
-          />
-        );
-      });
-    } catch (err) {
-      console.error("Error formatting content:", err);
-      return <p className="text-muted-foreground">Content could not be displayed properly.</p>;
-    }
-  };
 
   // Show loading state
   if (loading) {
