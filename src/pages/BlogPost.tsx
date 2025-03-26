@@ -9,45 +9,101 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import CommentsSection from '../components/CommentsSection';
 import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-// Try to safely import blog data
-let technicalAnalysisPosts = [];
-let fundamentalAnalysisPosts = [];
-let tradingStrategyPosts = [];
-let cryptoForexPosts = [];
-let allPosts = [];
-
-try {
-  // Import the individual blog categories instead of trying to use a potentially problematic merged array
-  const blogData = require('../data/blogPosts');
-  
-  technicalAnalysisPosts = Array.isArray(blogData.technicalAnalysisPosts) ? blogData.technicalAnalysisPosts : [];
-  fundamentalAnalysisPosts = Array.isArray(blogData.fundamentalAnalysisPosts) ? blogData.fundamentalAnalysisPosts : [];
-  tradingStrategyPosts = Array.isArray(blogData.tradingStrategyPosts) ? blogData.tradingStrategyPosts : [];
-  cryptoForexPosts = Array.isArray(blogData.cryptoForexPosts) ? blogData.cryptoForexPosts : [];
-  
-  // Safely combine all post categories
-  allPosts = [
-    ...technicalAnalysisPosts,
-    ...fundamentalAnalysisPosts,
-    ...tradingStrategyPosts,
-    ...cryptoForexPosts
-  ]
-  .filter(Boolean) // Filter out any undefined values
-  .filter(post => {
-    // Filter out posts with invalid structure
-    return (
-      post && 
-      typeof post === 'object' && 
-      typeof post.slug === 'string' && 
-      post.slug.trim() !== ''
-    );
-  });
-  
-  console.log(`Successfully loaded ${allPosts.length} blog posts`);
-} catch (error) {
-  console.error("Error loading blog posts:", error);
+// Define interface for blog post data
+interface BlogPost {
+  title?: string;
+  description?: string;
+  slug?: string;
+  date?: string | Date;
+  readingTime?: string;
+  category?: string;
+  tags?: string[];
+  image?: string;
+  content?: string;
+  author?: string;
 }
+
+// Create a safe method to load blog data
+const useSafeBlogData = () => {
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const loadBlogData = async () => {
+      try {
+        // Use dynamic import with error handling
+        const blogDataModule = await import('../data/blogPosts').catch(error => {
+          console.error("Failed to import blog posts module:", error);
+          throw new Error("Blog data could not be loaded.");
+        });
+
+        // Check each category and combine them safely
+        const technicalAnalysisPosts = Array.isArray(blogDataModule.technicalAnalysisPosts) 
+          ? blogDataModule.technicalAnalysisPosts 
+          : [];
+          
+        const fundamentalAnalysisPosts = Array.isArray(blogDataModule.fundamentalAnalysisPosts) 
+          ? blogDataModule.fundamentalAnalysisPosts 
+          : [];
+          
+        const tradingStrategyPosts = Array.isArray(blogDataModule.tradingStrategyPosts) 
+          ? blogDataModule.tradingStrategyPosts 
+          : [];
+          
+        const cryptoForexPosts = Array.isArray(blogDataModule.cryptoForexPosts) 
+          ? blogDataModule.cryptoForexPosts 
+          : [];
+
+        // Combine and filter all posts
+        const combinedPosts = [
+          ...technicalAnalysisPosts,
+          ...fundamentalAnalysisPosts,
+          ...tradingStrategyPosts,
+          ...cryptoForexPosts
+        ]
+        .filter(Boolean) // Remove any undefined/null entries
+        .filter(post => {
+          // Validate post structure
+          return (
+            post && 
+            typeof post === 'object' && 
+            typeof post.slug === 'string' && 
+            post.slug.trim() !== ''
+          );
+        });
+
+        setAllPosts(combinedPosts);
+        console.log(`Successfully loaded ${combinedPosts.length} blog posts`);
+        
+        if (combinedPosts.length === 0) {
+          toast({
+            title: "No blog posts found",
+            description: "The blog data appears to be empty or invalid.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Error processing blog data:", error);
+        setLoadError((error as Error).message || "Failed to load blog data");
+        toast({
+          title: "Error loading blog posts",
+          description: "Please try refreshing the page.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    loadBlogData();
+  }, [toast]);
+
+  return { allPosts, isLoaded, loadError };
+};
 
 // Safe image handling function
 const ensureValidImage = (imageUrl: string | undefined, index: number) => {
@@ -85,14 +141,25 @@ const formatDate = (dateString: string | Date | undefined) => {
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<BlogPost | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const { allPosts, isLoaded, loadError } = useSafeBlogData();
   
   useEffect(() => {
     window.scrollTo(0, 0);
     setLoading(true);
     setError(null);
+    
+    if (!isLoaded) {
+      return; // Wait for blog data to load
+    }
+    
+    if (loadError) {
+      setError(loadError);
+      setLoading(false);
+      return;
+    }
     
     try {
       if (!slug) {
@@ -120,7 +187,7 @@ const BlogPost = () => {
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, allPosts, isLoaded, loadError]);
 
   // Enhanced formatContent function with highlight support for SEO terms
   const formatContent = (content: string) => {
@@ -137,7 +204,14 @@ const BlogPost = () => {
       'chart pattern', 'price action', 'market sentiment', 'overbought',
       'oversold', 'consolidation', 'fibonacci', 'trading psychology',
       'liquidity', 'hedge', 'leverage', 'margin', 'swing trading',
-      'day trading', 'position trading', 'scalping', 'trend following'
+      'day trading', 'position trading', 'scalping', 'trend following',
+      'fibonacci retracement', 'relative strength', 'divergence', 'consolidation',
+      'breakout strategy', 'pivot points', 'head and shoulders pattern',
+      'double top', 'double bottom', 'cup and handle', 'flag pattern',
+      'pennant pattern', 'wedge pattern', 'triangle pattern', 'harmonic pattern',
+      'elliot wave theory', 'wyckoff method', 'orderbook analysis', 'liquidity',
+      'smart money', 'institutional trading', 'accumulation', 'distribution',
+      'gap trading', 'opening range breakout', 'options trading', 'derivatives'
     ];
     
     // Create a regex pattern for all terms (case insensitive)
@@ -269,7 +343,7 @@ const BlogPost = () => {
   const postTitle = post.title || "Untitled Post";
   const postDescription = post.description || "No description available";
   const postCategory = post.category || "Uncategorized";
-  const postImage = ensureValidImage(post.image, parseInt(post.slug.split('-')[0] || '0', 10));
+  const postImage = ensureValidImage(post.image, parseInt(post.slug?.split('-')[0] || '0', 10));
   const postDate = post.date || new Date();
   const postReadingTime = post.readingTime || "5 min read";
   const postTags = Array.isArray(post.tags) ? post.tags : [];
@@ -316,7 +390,7 @@ const BlogPost = () => {
               </div>
               <div className="flex items-center gap-1">
                 <User className="h-4 w-4" />
-                <span>ChartPulse Team</span>
+                <span>{post.author || "ChartPulse Team"}</span>
               </div>
               <div className="flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" />
@@ -374,7 +448,7 @@ const BlogPost = () => {
                   
                   const relatedPostImage = ensureValidImage(
                     relatedPost.image, 
-                    parseInt(relatedPost.slug.split('-')[0] || '0', 10)
+                    parseInt(relatedPost.slug?.split('-')[0] || '0', 10)
                   );
                   
                   return (
