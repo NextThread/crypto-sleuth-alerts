@@ -2,15 +2,42 @@
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import Layout from '../components/Layout';
-import { technicalAnalysisPosts, fundamentalAnalysisPosts, tradingStrategyPosts, cryptoForexPosts } from '../data/blogPosts';
-import { Calendar, User, MessageSquare, Link as LinkIcon, ChevronLeft, Tag, Share2 } from 'lucide-react';
+import { Calendar, User, MessageSquare, ChevronLeft, Tag, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import CommentsSection from '../components/CommentsSection';
-import { ensureValidImage } from './Blog';
 import { useEffect } from 'react';
+
+// Import the individual blog categories instead of trying to use a potentially problematic merged array
+import { 
+  technicalAnalysisPosts, 
+  fundamentalAnalysisPosts, 
+  tradingStrategyPosts, 
+  cryptoForexPosts 
+} from '../data/blogPosts';
+
+// Safe image handling function
+const ensureValidImage = (imageUrl: string | undefined, index: number) => {
+  const fallbackImages = [
+    "https://images.unsplash.com/photo-1518770660439-4636190af475",
+    "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+    "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+    "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3",
+    "https://images.unsplash.com/photo-1642790551116-18e150f248e5",
+    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485",
+    "https://images.unsplash.com/photo-1560472355-536de3962603",
+    "https://images.unsplash.com/photo-1614028674026-a65e31bfd27c"
+  ];
+  
+  if (!imageUrl || imageUrl.trim() === '' || imageUrl.includes('undefined')) {
+    return fallbackImages[index % fallbackImages.length];
+  }
+  
+  return imageUrl;
+};
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -18,16 +45,16 @@ const BlogPost = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
-  
-  // Combine all post categories to find the requested post
+
+  // Safely combine all post categories
   const allPosts = [
-    ...technicalAnalysisPosts,
-    ...fundamentalAnalysisPosts,
-    ...tradingStrategyPosts,
-    ...cryptoForexPosts
-  ];
+    ...technicalAnalysisPosts || [],
+    ...fundamentalAnalysisPosts || [],
+    ...tradingStrategyPosts || [],
+    ...cryptoForexPosts || []
+  ].filter(Boolean); // Filter out any undefined values
   
-  const post = allPosts.find((post) => post.slug === slug);
+  const post = allPosts.find((post) => post?.slug === slug);
 
   if (!post) {
     return (
@@ -48,25 +75,41 @@ const BlogPost = () => {
   // Convert post tags to keywords for metadata
   const keywords = post.tags ? post.tags.join(', ') : '';
 
-  // Format the content for display (handle paragraphs)
+  // Enhanced formatContent function with highlight support for SEO terms
   const formatContent = (content: string) => {
     if (!content) return null;
+    
+    // Define key SEO terms for trading/finance to highlight
+    const seoHighlightTerms = [
+      'technical analysis', 'trend', 'support level', 'resistance level', 
+      'moving average', 'MACD', 'RSI', 'volume', 'candlestick', 'breakout',
+      'momentum', 'volatility', 'bullish', 'bearish', 'divergence',
+      'fundamentals', 'market cap', 'P/E ratio', 'EPS', 'trading strategy',
+      'risk management', 'portfolio', 'diversification', 'stop-loss',
+      'cryptocurrency', 'blockchain', 'forex', 'signal', 'indicator'
+    ];
+    
+    // Create a regex pattern for all terms (case insensitive)
+    const pattern = new RegExp(`\\b(${seoHighlightTerms.join('|')})\\b`, 'gi');
     
     return content.split('\n\n').map((paragraph, index) => {
       // Handle headers (lines starting with ###)
       if (paragraph.startsWith('###')) {
+        const headerText = paragraph.replace('###', '').trim();
+        // Add subtle highlighting to headers
         return (
-          <h3 key={index} className="text-xl font-bold mt-8 mb-4">
-            {paragraph.replace('###', '').trim()}
+          <h3 key={index} className="text-xl font-bold mt-8 mb-4 text-primary/90">
+            {headerText}
           </h3>
         );
       }
       
       // Handle subheaders (lines starting with **)
       if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
+        const subheaderText = paragraph.replace(/^\*\*|\*\*$/g, '').trim();
         return (
-          <h4 key={index} className="text-lg font-semibold mt-6 mb-3">
-            {paragraph.replace(/^\*\*|\*\*$/g, '').trim()}
+          <h4 key={index} className="text-lg font-semibold mt-6 mb-3 text-primary/80">
+            {subheaderText}
           </h4>
         );
       }
@@ -75,15 +118,36 @@ const BlogPost = () => {
       if (paragraph.startsWith('- ')) {
         return (
           <ul key={index} className="list-disc pl-6 mt-2 mb-4">
-            {paragraph.split('\n- ').map((item, i) => (
-              <li key={i} className="mb-1">{item.replace(/^- /, '')}</li>
-            ))}
+            {paragraph.split('\n- ').map((item, i) => {
+              const bulletText = item.replace(/^- /, '');
+              // Highlight SEO terms in bullet points
+              const highlightedBullet = bulletText.replace(pattern, match => 
+                `<span class="font-medium text-primary">${match}</span>`
+              );
+              return (
+                <li 
+                  key={i} 
+                  className="mb-1" 
+                  dangerouslySetInnerHTML={{ __html: highlightedBullet }}
+                />
+              );
+            })}
           </ul>
         );
       }
       
-      // Regular paragraphs
-      return <p key={index} className="mb-4">{paragraph}</p>;
+      // Regular paragraphs with SEO term highlighting
+      const highlightedParagraph = paragraph.replace(pattern, match => 
+        `<span class="font-medium text-primary">${match}</span>`
+      );
+      
+      return (
+        <p 
+          key={index} 
+          className="mb-4" 
+          dangerouslySetInnerHTML={{ __html: highlightedParagraph }}
+        />
+      );
     });
   };
 
@@ -107,7 +171,7 @@ const BlogPost = () => {
               <Badge className="bg-primary/20 text-primary hover:bg-primary/30">
                 {post.category}
               </Badge>
-              {post.tags.slice(0, 3).map((tag) => (
+              {post.tags && post.tags.slice(0, 3).map((tag) => (
                 <Badge key={tag} variant="outline" className="bg-secondary/10">
                   {tag}
                 </Badge>
@@ -123,7 +187,7 @@ const BlogPost = () => {
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
                 <time dateTime={post.date}>
-                  {format(new Date(post.date), 'MMMM dd, yyyy', { locale: enUS })}
+                  {format(new Date(post.date || new Date()), 'MMMM dd, yyyy', { locale: enUS })}
                 </time>
               </div>
               <div className="flex items-center gap-1">
@@ -143,12 +207,12 @@ const BlogPost = () => {
 
           <div className="relative">
             <img
-              src={post.image}
+              src={ensureValidImage(post.image, parseInt(post.slug.split('-')[0] || '0', 10))}
               alt={post.title}
               className="w-full rounded-lg object-cover aspect-video shadow-md"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = ensureValidImage("", Math.floor(Math.random() * 14));
+                target.src = ensureValidImage("", Math.floor(Math.random() * 9));
               }}
             />
           </div>
@@ -157,13 +221,13 @@ const BlogPost = () => {
             {post.content ? (
               formatContent(post.content)
             ) : (
-              <p>{post.description}</p>
+              <p className="text-muted-foreground">{post.description}</p>
             )}
           </section>
           
           <div className="flex justify-between items-center border-t border-b border-border py-4 my-8">
             <div className="flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
+              {post.tags && post.tags.map((tag) => (
                 <Badge key={tag} variant="outline" className="bg-secondary/10">
                   {tag}
                 </Badge>
@@ -181,18 +245,18 @@ const BlogPost = () => {
             <h3 className="text-xl font-bold mb-4">Related Articles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {allPosts
-                .filter(p => p.slug !== slug && p.category === post.category)
+                .filter(p => p && p.slug !== slug && p.category === post.category)
                 .slice(0, 2)
                 .map(relatedPost => (
                   <Link key={relatedPost.slug} to={`/blog/${relatedPost.slug}`} className="group">
                     <div className="flex gap-4 items-start">
                       <img 
-                        src={relatedPost.image} 
+                        src={ensureValidImage(relatedPost.image, parseInt(relatedPost.slug.split('-')[0] || '0', 10))} 
                         alt={relatedPost.title} 
                         className="w-20 h-20 object-cover rounded-md"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = ensureValidImage("", Math.floor(Math.random() * 14));
+                          target.src = ensureValidImage("", Math.floor(Math.random() * 9));
                         }}
                       />
                       <div>
