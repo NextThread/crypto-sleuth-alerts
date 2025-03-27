@@ -16,6 +16,7 @@ import RelatedPosts from '../components/blog/RelatedPosts';
 import PostError from '../components/blog/PostError';
 import PostLoading from '../components/blog/PostLoading';
 import PostNotFound from '../components/blog/PostNotFound';
+import PostFAQ from '../components/blog/PostFAQ';
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -106,6 +107,40 @@ const BlogPost = () => {
         <title>{postTitle} | ChartPulse Blog</title>
         <meta name="description" content={postDescription} />
         <meta name="keywords" content={keywords} />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "What is cryptocurrency trading?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Cryptocurrency trading involves buying, selling, and exchanging digital currencies on specialized platforms called crypto exchanges. Unlike traditional markets, crypto markets operate 24/7, offering opportunities for traders around the clock."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How do beginners start investing in cryptocurrencies?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Beginners should start by educating themselves about blockchain technology and cryptocurrencies, researching reputable exchanges, setting up secure wallets, starting with small investments, diversifying their portfolio, and staying updated with market trends and news."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "What are the risks associated with crypto investing?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Crypto investing carries several risks including high price volatility, regulatory uncertainties, security vulnerabilities, market manipulation, liquidity issues, and technological risks. It's important to never invest more than you can afford to lose."
+                  }
+                }
+              ]
+            }
+          `}
+        </script>
       </Helmet>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -119,6 +154,7 @@ const BlogPost = () => {
           <PostImage post={post} />
           <PostContent post={post} />
           <PostTags post={post} />
+          <PostFAQ post={post} />
           <CommentsSection postId={slug || ""} />
           <RelatedPosts posts={relatedPosts} />
         </article>
