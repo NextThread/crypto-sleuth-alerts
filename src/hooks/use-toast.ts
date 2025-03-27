@@ -1,3 +1,5 @@
+
+// Importing React from "react" is essential for hooks to work properly
 import * as React from "react"
 
 import type {
@@ -168,7 +170,8 @@ function toast({ ...props }: Toast) {
   }
 }
 
-function useToast() {
+// This is the hook that components will use
+export function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -188,4 +191,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export { toast }
