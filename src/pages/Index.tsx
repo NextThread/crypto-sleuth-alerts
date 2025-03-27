@@ -386,7 +386,7 @@ const Index = () => {
             slug: "crypto-faqs",
             excerpt: "Frequently asked questions about cryptocurrency trading and analysis.",
             content: "",
-            author: { name: "ChartPulse Team", avatar: "" },
+            author: "ChartPulse Team", // Fixed: Changed from object to string
             date: new Date().toISOString(),
             category: "guides",
             tags: ["faq", "help", "crypto"],
