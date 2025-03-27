@@ -23,7 +23,7 @@ const BlogPost = () => {
   const [post, setPost] = useState<BlogPostType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPostType[]>([]);
-  const { allPosts, isLoaded, loadError } = useSafeBlogData();
+  const { allPosts, isLoaded, hasError } = useSafeBlogData();
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -34,8 +34,8 @@ const BlogPost = () => {
       return; // Wait for blog data to load
     }
     
-    if (loadError) {
-      setError(loadError);
+    if (hasError) {
+      setError("Failed to load blog data");
       setLoading(false);
       return;
     }
@@ -66,7 +66,7 @@ const BlogPost = () => {
     } finally {
       setLoading(false);
     }
-  }, [slug, allPosts, isLoaded, loadError]);
+  }, [slug, allPosts, isLoaded, hasError]);
 
   // Show loading state
   if (loading) {
