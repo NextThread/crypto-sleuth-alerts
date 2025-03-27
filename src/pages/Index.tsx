@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -25,6 +26,7 @@ import { doc, getDoc, setDoc, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import CommunityForum from '../components/CommunityForum';
+import PostFAQ from '../components/blog/PostFAQ';
 
 const INTERVALS: TimeInterval[] = ['1s', '1m', '5m', '15m', '1h', '4h', '1d', '1w', '1M'];
 const DEFAULT_SYMBOL = 'BTCUSDT';
@@ -374,6 +376,23 @@ const Index = () => {
         
         <div className="animate-fade-in animation-delay-600 mb-16 pt-4">
           <CryptoNews initialExpandedCount={6} />
+        </div>
+
+        {/* FAQ Section - Added before Community Forum */}
+        <div className="mb-16 pt-4 animate-fade-in">
+          <PostFAQ post={{
+            id: "crypto-faqs",
+            title: "Cryptocurrency FAQs",
+            slug: "crypto-faqs",
+            excerpt: "Frequently asked questions about cryptocurrency trading and analysis.",
+            content: "",
+            author: { name: "ChartPulse Team", avatar: "" },
+            date: new Date().toISOString(),
+            category: "guides",
+            tags: ["faq", "help", "crypto"],
+            image: "",
+            readTime: 5
+          }} />
         </div>
 
         <div className="animate-fade-in mb-16 pt-4">
