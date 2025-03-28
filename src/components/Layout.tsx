@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from './ThemeToggle';
 import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText, Info } from 'lucide-react';
 
 interface LayoutProps {
@@ -69,6 +70,9 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
+            
             {user ? (
               <div className="hidden md:flex items-center gap-6">
                 <div className="flex items-center gap-2.5 bg-secondary/40 hover:bg-secondary/60 rounded-full px-3.5 py-1.5 transition-colors group">

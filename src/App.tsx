@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -24,38 +25,40 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/" element={<Index />} />
-                <Route 
-                  path="/subscription" 
-                  element={
-                    <ProtectedRoute>
-                      <Subscription />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/blog" 
-                  element={<Blog />} 
-                />
-                <Route 
-                  path="/blog/:slug" 
-                  element={<BlogPost />} 
-                />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-                <Route path="/about-us" element={<AboutUs />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </SubscriptionProvider>
-          </AuthProvider>
-        </BrowserRouter>
-        <Toaster />
-        <Sonner />
+        <ThemeProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={<Index />} />
+                  <Route 
+                    path="/subscription" 
+                    element={
+                      <ProtectedRoute>
+                        <Subscription />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/blog" 
+                    element={<Blog />} 
+                  />
+                  <Route 
+                    path="/blog/:slug" 
+                    element={<BlogPost />} 
+                  />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                  <Route path="/about-us" element={<AboutUs />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </BrowserRouter>
+          <Toaster />
+          <Sonner />
+        </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

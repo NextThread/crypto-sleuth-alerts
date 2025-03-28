@@ -1,10 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  .dark-theme {
     /* Base */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
@@ -48,6 +48,49 @@
     
     --radius: 0.75rem;
   }
+  
+  .light-theme {
+    /* Base */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 46%;
+    
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    
+    /* Crypto specific */
+    --crypto-bullish: 142 76% 36%;
+    --crypto-bearish: 0 84% 60%;
+    --crypto-neutral: 217 10% 64%;
+    --crypto-volume: 217 91% 60%;
+    --crypto-support: 142 76% 36%;
+    --crypto-resistance: 0 84% 60%;
+    --crypto-entry: 217 91% 60%;
+    --crypto-exit: 142 76% 36%;
+    --crypto-stop: 0 84% 60%;
+    --crypto-target: 142 76% 36%;
+  }
 }
 
 @layer base {
@@ -80,11 +123,27 @@
 
 @layer utilities {
   .glass-panel {
-    @apply backdrop-blur-lg bg-background/30 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+    @apply backdrop-blur-lg border shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+  }
+  
+  .light-theme .glass-panel {
+    @apply bg-white/70 border-black/10;
+  }
+  
+  .dark-theme .glass-panel {
+    @apply bg-background/30 border-white/10;
   }
   
   .glass-card {
-    @apply backdrop-blur-md bg-card/40 border border-white/10 shadow-md;
+    @apply backdrop-blur-md border shadow-md;
+  }
+  
+  .light-theme .glass-card {
+    @apply bg-white/80 border-black/10;
+  }
+  
+  .dark-theme .glass-card {
+    @apply bg-card/40 border-white/10;
   }
   
   .text-balance {
@@ -111,7 +170,6 @@
     animation-delay: 1200ms;
   }
   
-  /* New animations */
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -120,7 +178,6 @@
     animation: fadeInUp 0.8s ease-out forwards;
   }
   
-  /* Line clamp utilities */
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;
@@ -142,7 +199,6 @@
     -webkit-line-clamp: 3;
   }
   
-  /* Hide scrollbars but allow scrolling */
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -181,9 +237,16 @@
   .tag {
     @apply rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
+  
+  .light-theme .text-muted-foreground {
+    @apply text-gray-600;
+  }
+  
+  .light-theme .badge {
+    @apply border-gray-300;
+  }
 }
 
-/* New keyframes for the animations */
 @keyframes float {
   0% {
     transform: translateY(0px) rotate(0deg);
@@ -216,7 +279,6 @@
   }
 }
 
-/* More smooth animations and transitions */
 @keyframes glow {
   0%, 100% {
     filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.2));
