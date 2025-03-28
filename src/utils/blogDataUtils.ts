@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { blogPosts } from '../data/blogPosts';
 
 export interface BlogPost {
+  id?: string;
   slug: string;
   title?: string;
   description?: string;
@@ -13,6 +13,8 @@ export interface BlogPost {
   category?: string;
   tags?: string[];
   readingTime?: string;
+  readTime?: number;
+  excerpt?: string;
 }
 
 // Function to ensure a valid image URL is used
