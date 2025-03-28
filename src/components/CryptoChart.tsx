@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
 import { formatTimeLabel, generateChartOptions } from '../utils/chartUtils';
 import { 
@@ -18,6 +17,27 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import FullScreenToggle from './FullScreenToggle';
+import {
+  ComposedChart,
+  Line,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Legend,
+  Tooltip as RechartsTooltip,
+  ReferenceLine,
+  Area,
+  Scatter
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
 import 'chart.js/auto';
 
 Chart.register(...registerables, annotationPlugin, zoomPlugin);
@@ -27,6 +47,46 @@ interface CryptoChartProps {
   interval: TimeInterval;
   chartControls: ChartControlsState;
 }
+
+const Candlestick = ({ x, y, width, low, high, open, close }: { 
+  x: number; 
+  y: number; 
+  width: number; 
+  low: number; 
+  high: number; 
+  open: number; 
+  close: number; 
+}) => {
+  const isBullish = close >= open;
+  const color = isBullish ? "#22c55e" : "#ef4444"; // Green for bullish, red for bearish
+  
+  const bodyHeight = Math.max(1, Math.abs(open - close));
+  const bodyY = isBullish ? close : open;
+  
+  return (
+    <g>
+      {/* Wick (high to low) */}
+      <line 
+        x1={x + width / 2} 
+        y1={high} 
+        x2={x + width / 2} 
+        y2={low} 
+        stroke={color} 
+        strokeWidth={1}
+      />
+      {/* Body */}
+      <rect 
+        x={x} 
+        y={bodyY} 
+        width={width} 
+        height={bodyHeight} 
+        fill={isBullish ? color : color} 
+        stroke={color}
+        fillOpacity={isBullish ? 0.3 : 0.3}
+      />
+    </g>
+  );
+};
 
 const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const [chartData, setChartData] = useState<KlineData[]>([]);
@@ -215,439 +275,28 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     );
   }
   
+  const formattedChartData = chartData.map((d, index) => {
+    const date = new Date(d.openTime);
+    const formattedTime = formatTimeLabel(d.openTime, interval);
+    
+    return {
+      index,
+      time: formattedTime,
+      date,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+      volume: d.volume,
+      isBullish: d.close >= d.open
+    };
+  });
+  
   const { supports, resistances } = calculateSupportResistance(chartData);
   const { entryPoints, exitPoints, stopLoss, takeProfit } = identifyEntryExitPoints(chartData);
   const fibLevels = calculateFibonacciLevels(chartData);
   const { uptrend, downtrend } = detectTrendLines(chartData);
   const patterns = detectPatterns(chartData);
-  
-  const labels = chartData.map(d => formatTimeLabel(d.openTime, interval));
-  const closes = chartData.map(d => d.close);
-  const opens = chartData.map(d => d.open);
-  const highs = chartData.map(d => d.high);
-  const lows = chartData.map(d => d.low);
-  const volumes = chartData.map(d => d.volume);
-  
-  const isBullish = chartData.map(d => d.close >= d.open);
-  
-  const annotations: any = {};
-  
-  if (chartControls.showSupportResistance) {
-    supports.slice(0, 3).forEach((level, i) => {
-      annotations[`support${i}`] = {
-        type: 'line',
-        borderColor: 'rgba(52, 211, 153, 0.7)',
-        borderWidth: 2,
-        borderDash: [5, 5],
-        label: {
-          display: true,
-          content: 'Support',
-          position: 'start',
-          backgroundColor: 'rgba(52, 211, 153, 0.7)',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-        scaleID: 'y',
-        value: level,
-      };
-    });
-    
-    resistances.slice(0, 3).forEach((level, i) => {
-      annotations[`resistance${i}`] = {
-        type: 'line',
-        borderColor: 'rgba(239, 68, 68, 0.7)',
-        borderWidth: 2,
-        borderDash: [5, 5],
-        label: {
-          display: true,
-          content: 'Resistance',
-          position: 'start',
-          backgroundColor: 'rgba(239, 68, 68, 0.7)',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-        scaleID: 'y',
-        value: level,
-      };
-    });
-  }
-  
-  if (chartControls.showFibonacciLevels) {
-    fibLevels.forEach((level, i) => {
-      const fibPercents = [0, 23.6, 38.2, 50, 61.8, 78.6, 100];
-      annotations[`fib${i}`] = {
-        type: 'line',
-        borderColor: 'rgba(139, 92, 246, 0.5)',
-        borderWidth: 1,
-        label: {
-          display: i % 2 === 0,
-          content: `Fib ${fibPercents[i]}%`,
-          position: 'start',
-          backgroundColor: 'rgba(139, 92, 246, 0.5)',
-          color: '#fff',
-          font: {
-            size: 9,
-          },
-        },
-        scaleID: 'y',
-        value: level,
-      };
-    });
-  }
-  
-  if (chartControls.showTrendLines) {
-    uptrend.forEach((trend, i) => {
-      const startValue = chartData[trend.start].low;
-      annotations[`uptrend${i}`] = {
-        type: 'line',
-        xMin: labels[trend.start],
-        yMin: startValue,
-        xMax: labels[trend.end],
-        yMax: startValue + trend.slope * (trend.end - trend.start),
-        borderColor: 'rgba(16, 185, 129, 0.7)',
-        borderWidth: 2,
-        label: {
-          display: i === 0,
-          content: 'Uptrend',
-          position: {
-            x: 'start',
-            y: 'bottom'
-          },
-          backgroundColor: 'rgba(16, 185, 129, 0.7)',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-      };
-    });
-    
-    downtrend.forEach((trend, i) => {
-      const startValue = chartData[trend.start].high;
-      annotations[`downtrend${i}`] = {
-        type: 'line',
-        xMin: labels[trend.start],
-        yMin: startValue,
-        xMax: labels[trend.end],
-        yMax: startValue + trend.slope * (trend.end - trend.start),
-        borderColor: 'rgba(239, 68, 68, 0.7)',
-        borderWidth: 2,
-        label: {
-          display: i === 0,
-          content: 'Downtrend',
-          position: {
-            x: 'start',
-            y: 'top'
-          },
-          backgroundColor: 'rgba(239, 68, 68, 0.7)',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-      };
-    });
-  }
-  
-  if (chartControls.showEntryExitPoints) {
-    const lastEntryPoint = entryPoints.length > 0 ? entryPoints[entryPoints.length - 1] : null;
-    if (lastEntryPoint !== null) {
-      annotations[`entry`] = {
-        type: 'point',
-        xValue: labels[lastEntryPoint],
-        yValue: chartData[lastEntryPoint].close,
-        backgroundColor: '#F2FCE2',
-        borderColor: 'rgba(16, 185, 129, 0.8)',
-        borderWidth: 2,
-        radius: 5,
-        label: {
-          display: true,
-          content: 'Entry',
-          position: 'top',
-          backgroundColor: 'rgba(16, 185, 129, 0.8)',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-      };
-    }
-    
-    const lastExitPoint = exitPoints.length > 0 ? exitPoints[exitPoints.length - 1] : null;
-    if (lastExitPoint !== null) {
-      annotations[`exit`] = {
-        type: 'point',
-        xValue: labels[lastExitPoint],
-        yValue: chartData[lastExitPoint].close,
-        backgroundColor: '#0EA5E9',
-        radius: 5,
-        label: {
-          display: true,
-          content: 'Exit',
-          position: 'top',
-          backgroundColor: '#0EA5E9',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-      };
-    }
-    
-    if (stopLoss > 0) {
-      annotations['stopLoss'] = {
-        type: 'line',
-        borderColor: '#ea384c',
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: 'Stop Loss',
-          position: 'start',
-          backgroundColor: '#ea384c',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-        scaleID: 'y',
-        value: stopLoss,
-      };
-    }
-    
-    if (takeProfit > 0) {
-      annotations['takeProfit'] = {
-        type: 'line',
-        borderColor: '#0EA5E9',
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: 'Take Profit',
-          position: 'end',
-          backgroundColor: '#0EA5E9',
-          color: '#fff',
-          font: {
-            size: 10,
-          },
-        },
-        scaleID: 'y',
-        value: takeProfit,
-      };
-    }
-  }
-  
-  if (chartControls.showPatterns && chartControls.patternControls) {
-    const patternControls = chartControls.patternControls;
-    
-    let currentPatternBoxes: { startIdx: number, endIdx: number, yMin: number, yMax: number }[] = [];
-    
-    if (patternControls.showHeadAndShoulders && patterns.headAndShoulders) {
-      patterns.headAndShoulders.forEach((index, i) => {
-        const startIdx = Math.max(0, index - 10);
-        const endIdx = Math.min(chartData.length - 1, index + 10);
-        const yMin = chartData[index].low * 0.99;
-        const yMax = chartData[index].high * 1.01;
-        
-        const overlap = currentPatternBoxes.some(box => 
-          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
-          (yMin <= box.yMax && yMax >= box.yMin)
-        );
-        
-        if (!overlap) {
-          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
-          
-          annotations[`handS${i}`] = {
-            type: 'box',
-            xMin: labels[startIdx],
-            xMax: labels[endIdx],
-            yMin,
-            yMax,
-            backgroundColor: 'rgba(244, 114, 182, 0.2)',
-            borderColor: 'rgba(244, 114, 182, 0.8)',
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: 'H&S Pattern',
-              position: 'center',
-              backgroundColor: 'rgba(244, 114, 182, 0.8)',
-              color: '#fff',
-              font: {
-                size: 10,
-              },
-            },
-          };
-        }
-      });
-    }
-    
-    if (patternControls.showDoubleTop && patterns.doubleTop) {
-      patterns.doubleTop.forEach((index, i) => {
-        const startIdx = Math.max(0, index - 8);
-        const endIdx = Math.min(chartData.length - 1, index + 8);
-        const yMin = chartData[index].low * 0.99;
-        const yMax = chartData[index].high * 1.01;
-        
-        const overlap = currentPatternBoxes.some(box => 
-          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
-          (yMin <= box.yMax && yMax >= box.yMin)
-        );
-        
-        if (!overlap) {
-          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
-          
-          annotations[`doubleTop${i}`] = {
-            type: 'box',
-            xMin: labels[startIdx],
-            xMax: labels[endIdx],
-            yMin,
-            yMax,
-            backgroundColor: 'rgba(249, 115, 22, 0.2)',
-            borderColor: 'rgba(249, 115, 22, 0.8)',
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: 'Double Top',
-              position: 'center',
-              backgroundColor: 'rgba(249, 115, 22, 0.8)',
-              color: '#fff',
-              font: {
-                size: 10,
-              },
-            },
-          };
-        }
-      });
-    }
-    
-    if (patternControls.showDoubleBottom && patterns.doubleBottom) {
-      patterns.doubleBottom.forEach((index, i) => {
-        const startIdx = Math.max(0, index - 8);
-        const endIdx = Math.min(chartData.length - 1, index + 8);
-        const yMin = chartData[index].low * 0.99;
-        const yMax = chartData[index].high * 1.01;
-        
-        const overlap = currentPatternBoxes.some(box => 
-          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
-          (yMin <= box.yMax && yMax >= box.yMin)
-        );
-        
-        if (!overlap) {
-          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
-          
-          annotations[`doubleBottom${i}`] = {
-            type: 'box',
-            xMin: labels[startIdx],
-            xMax: labels[endIdx],
-            yMin,
-            yMax,
-            backgroundColor: 'rgba(16, 185, 129, 0.2)',
-            borderColor: 'rgba(16, 185, 129, 0.8)',
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: 'Double Bottom',
-              position: 'center',
-              backgroundColor: 'rgba(16, 185, 129, 0.8)',
-              color: '#fff',
-              font: {
-                size: 10,
-              },
-            },
-          };
-        }
-      });
-    }
-    
-    if (patternControls.showTriangle && patterns.triangle) {
-      patterns.triangle.forEach((triangle, i) => {
-        const color = triangle.type === 'ascending' ? 'rgba(16, 185, 129, 0.8)' : 
-                      triangle.type === 'descending' ? 'rgba(239, 68, 68, 0.8)' : 
-                      'rgba(59, 130, 246, 0.8)';
-        
-        const startIdx = triangle.start;
-        const endIdx = triangle.end;
-        const yMin = Math.min(...chartData.slice(startIdx, endIdx + 1).map(d => d.low)) * 0.99;
-        const yMax = Math.max(...chartData.slice(startIdx, endIdx + 1).map(d => d.high)) * 1.01;
-        
-        const overlap = currentPatternBoxes.some(box => 
-          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
-          (yMin <= box.yMax && yMax >= box.yMin)
-        );
-        
-        if (!overlap) {
-          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
-          
-          annotations[`triangle${i}`] = {
-            type: 'box',
-            xMin: labels[startIdx],
-            xMax: labels[endIdx],
-            yMin,
-            yMax,
-            backgroundColor: color.replace('0.8', '0.2'),
-            borderColor: color,
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: `${triangle.type.charAt(0).toUpperCase() + triangle.type.slice(1)} Triangle`,
-              position: 'center',
-              backgroundColor: color,
-              color: '#fff',
-              font: {
-                size: 10,
-              },
-            },
-          };
-        }
-      });
-    }
-    
-    if (patternControls.showWedge && patterns.wedge) {
-      patterns.wedge.forEach((wedge, i) => {
-        const color = wedge.type === 'rising' ? 'rgba(16, 185, 129, 0.8)' : 
-                      'rgba(239, 68, 68, 0.8)';
-        
-        const startIdx = wedge.start;
-        const endIdx = wedge.end;
-        const yMin = Math.min(...chartData.slice(startIdx, endIdx + 1).map(d => d.low)) * 0.99;
-        const yMax = Math.max(...chartData.slice(startIdx, endIdx + 1).map(d => d.high)) * 1.01;
-        
-        const overlap = currentPatternBoxes.some(box => 
-          (startIdx <= box.endIdx && endIdx >= box.startIdx) && 
-          (yMin <= box.yMax && yMax >= box.yMin)
-        );
-        
-        if (!overlap) {
-          currentPatternBoxes.push({ startIdx, endIdx, yMin, yMax });
-          
-          annotations[`wedge${i}`] = {
-            type: 'box',
-            xMin: labels[startIdx],
-            xMax: labels[endIdx],
-            yMin,
-            yMax,
-            backgroundColor: color.replace('0.8', '0.2'),
-            borderColor: color,
-            borderWidth: 2,
-            label: {
-              display: true,
-              content: `${wedge.type.charAt(0).toUpperCase() + wedge.type.slice(1)} Wedge`,
-              position: 'center',
-              backgroundColor: color,
-              color: '#fff',
-              font: {
-                size: 10,
-              },
-            },
-          };
-        }
-      });
-    }
-  }
-  
-  const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
   return (
     <Card id="crypto-chart-container" className="w-full h-auto rounded-lg mt-6 glass-card overflow-hidden">
@@ -728,7 +377,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           </div>
         </TooltipProvider>
         
-        <div className="h-[320px] relative bg-black/10 rounded-lg border border-white/10 p-2">
+        <div className="h-[320px] relative bg-black/10 rounded-lg border border-white/10 p-2 mt-4">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -736,10 +385,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                   className="absolute top-2 right-2 z-10 bg-black/30 text-white text-xs px-2 py-1 rounded hover:bg-black/50 transition-colors"
                   onClick={() => {
                     if (chartRef.current) {
-                      if (chartRef.current.chartInstance) {
-                        chartRef.current.chartInstance.resetZoom();
-                      } else if (chartRef.current.current) {
-                        chartRef.current.current.resetZoom();
+                      const chart = chartRef.current.chart;
+                      if (chart) {
+                        chart.zoomOut();
                       }
                     }
                   }}
@@ -753,219 +401,198 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
             </Tooltip>
           </TooltipProvider>
           
-          <Line
-            data={{
-              labels,
-              datasets: chartControls.chartType === 'line' 
-                ? [
-                    {
-                      type: 'line',
-                      label: 'Price',
-                      data: closes,
-                      borderColor: (context) => {
-                        const index = context.dataIndex;
-                        if (index > 0) {
-                          return closes[index] >= closes[index - 1] 
-                            ? 'rgba(22, 163, 74, 1)' // Green for bullish
-                            : 'rgba(220, 38, 38, 1)'; // Red for bearish
-                        }
-                        return 'rgba(59, 130, 246, 1)'; // Default blue for first point
-                      },
-                      backgroundColor: (context) => {
-                        const index = context.dataIndex;
-                        if (index > 0) {
-                          return closes[index] >= closes[index - 1]
-                            ? 'rgba(22, 163, 74, 0.1)' // Light green for bullish
-                            : 'rgba(220, 38, 38, 0.1)'; // Light red for bearish
-                        }
-                        return 'rgba(59, 130, 246, 0.1)'; // Default blue for first point
-                      },
-                      pointRadius: 0,
-                      borderWidth: 2,
-                      fill: true,
-                      tension: 0.1,
-                      segment: {
-                        borderColor: (context) => {
-                          const index = context.p1DataIndex;
-                          if (index > 0) {
-                            return closes[index] >= closes[index - 1]
-                              ? 'rgba(22, 163, 74, 1)' // Green for bullish segment
-                              : 'rgba(220, 38, 38, 1)'; // Red for bearish segment
-                          }
-                          return 'rgba(59, 130, 246, 1)'; // Default blue
-                        }
-                      }
-                    }
-                  ]
-                : [
-                    {
-                      type: 'bar' as const,
-                      label: 'Volume',
-                      data: volumes,
-                      backgroundColor: chartData.map(d => 
-                        d.close > d.open 
-                          ? 'rgba(16, 185, 129, 0.3)'
-                          : 'rgba(239, 68, 68, 0.3)'
-                      ),
-                      yAxisID: 'y1',
-                      order: 2,
-                      categoryPercentage: 0.3,
-                    },
-                    {
-                      type: 'line' as const,
-                      label: 'OHLC',
-                      data: closes,
-                      borderColor: (context) => {
-                        const index = context.dataIndex;
-                        if (index < chartData.length) {
-                          return chartData[index].close >= chartData[index].open
-                            ? 'rgba(16, 185, 129, 1)' // Green for bullish candle
-                            : 'rgba(239, 68, 68, 1)'; // Red for bearish candle
-                        }
-                        return 'rgba(59, 130, 246, 1)'; // Default blue
-                      },
-                      backgroundColor: (context) => {
-                        const index = context.dataIndex;
-                        if (index < chartData.length) {
-                          return chartData[index].close >= chartData[index].open
-                            ? 'rgba(16, 185, 129, 0.05)' // Light green for bullish
-                            : 'rgba(239, 68, 68, 0.05)'; // Light red for bearish
-                        }
-                        return 'rgba(59, 130, 246, 0.05)'; // Default light blue
-                      },
-                      borderWidth: 2,
-                      pointRadius: 0,
-                      yAxisID: 'y',
-                      order: 1,
-                      segment: {
-                        borderColor: (context) => {
-                          const index = context.p1DataIndex;
-                          if (index < chartData.length) {
-                            return chartData[index].close >= chartData[index].open
-                              ? 'rgba(16, 185, 129, 1)' // Green for bullish segment
-                              : 'rgba(239, 68, 68, 1)'; // Red for bearish segment
-                          }
-                          return 'rgba(59, 130, 246, 1)'; // Default blue
-                        }
-                      }
-                    }
-                  ] as any
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                annotation: {
-                  annotations,
-                },
-                zoom: {
-                  pan: {
-                    enabled: true,
-                    mode: 'xy' as const,
-                    modifierKey: 'shift' as const,
-                  },
-                  zoom: {
-                    wheel: {
-                      enabled: true,
-                      speed: 0.1,
-                    },
-                    pinch: {
-                      enabled: true
-                    },
-                    mode: 'xy' as const,
-                    drag: {
-                      enabled: true,
-                      backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                      borderColor: 'rgba(59, 130, 246, 0.8)',
-                      borderWidth: 1,
-                    },
-                  },
-                  limits: {
-                    x: {min: 'original' as const, max: 'original' as const, minRange: 10},
-                    y: {min: 'original' as const, max: 'original' as const, minRange: 10}
-                  }
-                },
-                tooltip: {
-                  ...baseOptions.plugins.tooltip,
-                  callbacks: {
-                    label: (context: any) => {
-                      const index = context.dataIndex;
-                      const dataPoint = chartData[index];
-                      
-                      if (!dataPoint) return '';
-                      
-                      if (chartControls.chartType === 'candlestick') {
-                        return [
-                          `Open: ${dataPoint.open.toFixed(2)}`,
-                          `High: ${dataPoint.high.toFixed(2)}`,
-                          `Low: ${dataPoint.low.toFixed(2)}`,
-                          `Close: ${dataPoint.close.toFixed(2)}`,
-                          `Volume: ${Math.round(dataPoint.volume)}`,
-                        ];
-                      } else {
-                        return `Price: ${dataPoint.close.toFixed(2)}`;
-                      }
-                    },
-                  },
-                  titleFont: {
-                    size: 12,
-                    weight: 'bold' as const,
-                  },
-                  bodyFont: {
-                    size: 11,
-                  },
-                },
-                legend: {
-                  display: false,
-                },
+          <ChartContainer
+            config={{
+              price: {
+                label: "Price",
+                color: "#10b981"
               },
-              interaction: {
-                mode: 'nearest' as const,
-                intersect: false,
+              volume: {
+                label: "Volume",
+                color: "rgba(59, 130, 246, 0.5)"
               },
-              scales: {
-                x: {
-                  ticks: {
-                    maxRotation: 0,
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    font: {
-                      size: 10,
-                    },
-                    maxTicksLimit: 8,
-                  },
-                  grid: {
-                    display: false,
-                  }
-                },
-                y: {
-                  position: 'right' as const,
-                  grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
-                  },
-                  ticks: {
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    font: {
-                      size: 10,
-                    },
-                  },
-                },
-                ...(chartControls.chartType !== 'line' ? {
-                  y1: {
-                    position: 'left' as const,
-                    grid: {
-                      display: false,
-                    },
-                    ticks: {
-                      display: false,
-                    },
-                    max: Math.max(...volumes) * 3,
-                  }
-                } : {})
+              bullish: {
+                label: "Bullish",
+                color: "#22c55e"
+              },
+              bearish: {
+                label: "Bearish",
+                color: "#ef4444"
+              },
+              support: {
+                label: "Support",
+                color: "rgba(52, 211, 153, 0.7)"
+              },
+              resistance: {
+                label: "Resistance",
+                color: "rgba(239, 68, 68, 0.7)"
               }
             }}
-            height={320}
+            className="h-full"
             ref={chartRef}
-          />
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart 
+                data={formattedChartData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="time" 
+                  scale="band" 
+                  tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.6)' }}
+                  tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                />
+                <YAxis 
+                  yAxisId="price" 
+                  domain={['auto', 'auto']} 
+                  orientation="right"
+                  tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.6)' }}
+                  tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                />
+                <YAxis 
+                  yAxisId="volume" 
+                  orientation="left" 
+                  domain={[0, 'dataMax']} 
+                  hide 
+                />
+                <RechartsTooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg shadow-lg p-2 text-xs">
+                          <p className="font-medium">{label}</p>
+                          <p className="text-primary-foreground">Open: <span className="font-mono">{data.open.toFixed(2)}</span></p>
+                          <p className="text-primary-foreground">High: <span className="font-mono">{data.high.toFixed(2)}</span></p>
+                          <p className="text-primary-foreground">Low: <span className="font-mono">{data.low.toFixed(2)}</span></p>
+                          <p className={data.isBullish ? "text-green-500" : "text-red-500"}>
+                            Close: <span className="font-mono">{data.close.toFixed(2)}</span>
+                          </p>
+                          <p className="text-muted-foreground">Volume: <span className="font-mono">{Math.round(data.volume).toLocaleString()}</span></p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                
+                {chartControls.showSupportResistance && supports.slice(0, 3).map((level, i) => (
+                  <ReferenceLine 
+                    key={`support-${i}`} 
+                    y={level} 
+                    yAxisId="price" 
+                    stroke="rgba(52, 211, 153, 0.7)" 
+                    strokeDasharray="5 5"
+                    label={{ 
+                      value: 'Support', 
+                      position: 'insideBottomLeft',
+                      fill: 'rgba(52, 211, 153, 0.7)',
+                      fontSize: 10
+                    }}
+                  />
+                ))}
+                
+                {chartControls.showSupportResistance && resistances.slice(0, 3).map((level, i) => (
+                  <ReferenceLine 
+                    key={`resistance-${i}`} 
+                    y={level} 
+                    yAxisId="price" 
+                    stroke="rgba(239, 68, 68, 0.7)" 
+                    strokeDasharray="5 5"
+                    label={{ 
+                      value: 'Resistance', 
+                      position: 'insideTopLeft',
+                      fill: 'rgba(239, 68, 68, 0.7)',
+                      fontSize: 10
+                    }}
+                  />
+                ))}
+                
+                {chartControls.showFibonacciLevels && fibLevels.map((level, i) => {
+                  const fibPercents = [0, 23.6, 38.2, 50, 61.8, 78.6, 100];
+                  return (
+                    <ReferenceLine 
+                      key={`fib-${i}`} 
+                      y={level} 
+                      yAxisId="price" 
+                      stroke="rgba(139, 92, 246, 0.5)" 
+                      label={{ 
+                        value: `Fib ${fibPercents[i]}%`, 
+                        position: 'insideLeft',
+                        fill: 'rgba(139, 92, 246, 0.5)',
+                        fontSize: 9
+                      }}
+                    />
+                  );
+                })}
+                
+                {chartControls.showEntryExitPoints && stopLoss > 0 && (
+                  <ReferenceLine 
+                    y={stopLoss} 
+                    yAxisId="price" 
+                    stroke="#ea384c"
+                    label={{ 
+                      value: 'Stop Loss', 
+                      position: 'insideBottomRight',
+                      fill: '#ea384c',
+                      fontSize: 10
+                    }}
+                  />
+                )}
+                
+                {chartControls.showEntryExitPoints && takeProfit > 0 && (
+                  <ReferenceLine 
+                    y={takeProfit} 
+                    yAxisId="price" 
+                    stroke="#0EA5E9"
+                    label={{ 
+                      value: 'Take Profit', 
+                      position: 'insideTopRight',
+                      fill: '#0EA5E9',
+                      fontSize: 10
+                    }}
+                  />
+                )}
+                
+                {chartControls.chartType === 'candlestick' ? (
+                  formattedChartData.map((d, i) => (
+                    <Scatter
+                      key={`candle-${i}`}
+                      data={[d]}
+                      yAxisId="price"
+                      shape={(props) => {
+                        const { cx, cy, width } = props;
+                        const candleWidth = 5;
+                        
+                        return (
+                          <Candlestick
+                            x={cx - candleWidth/2}
+                            y={0}
+                            width={candleWidth}
+                            open={cy - (d.open - d.close)}
+                            close={cy}
+                            high={cy - (d.high - d.close)}
+                            low={cy - (d.low - d.close)}
+                          />
+                        );
+                      }}
+                    />
+                  ))
+                ) : (
+                  <Line
+                    type="monotone"
+                    dataKey="close"
+                    yAxisId="price"
+                    stroke={(data) => data.isBullish ? "#22c55e" : "#ef4444"}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                    strokeWidth={2}
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </CardContent>
     </Card>
