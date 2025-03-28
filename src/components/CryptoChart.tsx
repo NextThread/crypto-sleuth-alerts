@@ -228,6 +228,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const lows = chartData.map(d => d.low);
   const volumes = chartData.map(d => d.volume);
   
+  const isBullish = chartData.map(d => d.close >= d.open);
+  
   const annotations: any = {};
   
   if (chartControls.showSupportResistance) {
@@ -760,12 +762,39 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       type: 'line',
                       label: 'Price',
                       data: closes,
-                      borderColor: 'rgba(59, 130, 246, 1)',
-                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      borderColor: (context) => {
+                        const index = context.dataIndex;
+                        if (index > 0) {
+                          return closes[index] >= closes[index - 1] 
+                            ? 'rgba(22, 163, 74, 1)' // Green for bullish
+                            : 'rgba(220, 38, 38, 1)'; // Red for bearish
+                        }
+                        return 'rgba(59, 130, 246, 1)'; // Default blue for first point
+                      },
+                      backgroundColor: (context) => {
+                        const index = context.dataIndex;
+                        if (index > 0) {
+                          return closes[index] >= closes[index - 1]
+                            ? 'rgba(22, 163, 74, 0.1)' // Light green for bullish
+                            : 'rgba(220, 38, 38, 0.1)'; // Light red for bearish
+                        }
+                        return 'rgba(59, 130, 246, 0.1)'; // Default blue for first point
+                      },
                       pointRadius: 0,
                       borderWidth: 2,
                       fill: true,
                       tension: 0.1,
+                      segment: {
+                        borderColor: (context) => {
+                          const index = context.p1DataIndex;
+                          if (index > 0) {
+                            return closes[index] >= closes[index - 1]
+                              ? 'rgba(22, 163, 74, 1)' // Green for bullish segment
+                              : 'rgba(220, 38, 38, 1)'; // Red for bearish segment
+                          }
+                          return 'rgba(59, 130, 246, 1)'; // Default blue
+                        }
+                      }
                     }
                   ]
                 : [
@@ -786,12 +815,39 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       type: 'line' as const,
                       label: 'OHLC',
                       data: closes,
-                      borderColor: 'rgba(59, 130, 246, 1)',
-                      backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                      borderColor: (context) => {
+                        const index = context.dataIndex;
+                        if (index < chartData.length) {
+                          return chartData[index].close >= chartData[index].open
+                            ? 'rgba(16, 185, 129, 1)' // Green for bullish candle
+                            : 'rgba(239, 68, 68, 1)'; // Red for bearish candle
+                        }
+                        return 'rgba(59, 130, 246, 1)'; // Default blue
+                      },
+                      backgroundColor: (context) => {
+                        const index = context.dataIndex;
+                        if (index < chartData.length) {
+                          return chartData[index].close >= chartData[index].open
+                            ? 'rgba(16, 185, 129, 0.05)' // Light green for bullish
+                            : 'rgba(239, 68, 68, 0.05)'; // Light red for bearish
+                        }
+                        return 'rgba(59, 130, 246, 0.05)'; // Default light blue
+                      },
                       borderWidth: 2,
                       pointRadius: 0,
                       yAxisID: 'y',
                       order: 1,
+                      segment: {
+                        borderColor: (context) => {
+                          const index = context.p1DataIndex;
+                          if (index < chartData.length) {
+                            return chartData[index].close >= chartData[index].open
+                              ? 'rgba(16, 185, 129, 1)' // Green for bullish segment
+                              : 'rgba(239, 68, 68, 1)'; // Red for bearish segment
+                          }
+                          return 'rgba(59, 130, 246, 1)'; // Default blue
+                        }
+                      }
                     }
                   ] as any
             }}
