@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -382,12 +381,11 @@ const Index = () => {
         {/* FAQ Section - Added before Community Forum */}
         <div className="mb-16 pt-4 animate-fade-in">
           <PostFAQ post={{
-            id: "crypto-faqs",
-            title: "Cryptocurrency FAQs",
             slug: "crypto-faqs",
+            title: "Cryptocurrency FAQs",
             excerpt: "Frequently asked questions about cryptocurrency trading and analysis.",
             content: "",
-            author: "ChartPulse Team", // Fixed: Changed from object to string
+            author: "ChartPulse Team",
             date: new Date().toISOString(),
             category: "guides",
             tags: ["faq", "help", "crypto"],
