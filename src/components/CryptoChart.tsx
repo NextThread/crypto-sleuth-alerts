@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
-import { formatTimeLabel, generateChartOptions } from '../utils/chartUtils';
+import { formatTimeLabel, generateChartOptions, getCandlestickColors } from '../utils/chartUtils';
 import { 
   calculateSupportResistance, 
   identifyEntryExitPoints,
@@ -227,6 +227,59 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const highs = chartData.map(d => d.high);
   const lows = chartData.map(d => d.low);
   const volumes = chartData.map(d => d.volume);
+  
+  const { bullColor, bearColor } = getCandlestickColors('dark');
+  
+  const createCandlestickDatasets = () => {
+    const candleDatasets = [];
+    
+    candleDatasets.push({
+      type: 'bar' as const,
+      label: 'Volume',
+      data: volumes,
+      backgroundColor: chartData.map(d => 
+        d.close > d.open 
+          ? `${bullColor}40`
+          : `${bearColor}40`
+      ),
+      yAxisID: 'y1',
+      order: 2,
+      categoryPercentage: 0.3,
+    });
+    
+    candleDatasets.push({
+      type: 'bar' as const,
+      label: 'Candles',
+      data: chartData.map(d => d.close > d.open ? d.close - d.open : d.open - d.close),
+      backgroundColor: chartData.map(d => 
+        d.close > d.open ? bullColor : bearColor
+      ),
+      borderColor: chartData.map(d => 
+        d.close > d.open ? bullColor : bearColor
+      ),
+      borderWidth: 1,
+      yAxisID: 'y',
+      order: 1,
+      barPercentage: 0.8,
+      categoryPercentage: 0.5,
+      barThickness: 8,
+    });
+    
+    candleDatasets.push({
+      type: 'line' as const,
+      label: 'Close Price',
+      data: closes,
+      borderColor: 'rgba(59, 130, 246, 0.7)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      pointRadius: 0,
+      borderWidth: 1,
+      yAxisID: 'y',
+      order: 0,
+      fill: false,
+    });
+    
+    return candleDatasets;
+  };
   
   const annotations: any = {};
   
@@ -768,32 +821,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                       tension: 0.1,
                     }
                   ]
-                : [
-                    {
-                      type: 'bar' as const,
-                      label: 'Volume',
-                      data: volumes,
-                      backgroundColor: chartData.map(d => 
-                        d.close > d.open 
-                          ? 'rgba(16, 185, 129, 0.3)'
-                          : 'rgba(239, 68, 68, 0.3)'
-                      ),
-                      yAxisID: 'y1',
-                      order: 2,
-                      categoryPercentage: 0.3,
-                    },
-                    {
-                      type: 'line' as const,
-                      label: 'OHLC',
-                      data: closes,
-                      borderColor: 'rgba(59, 130, 246, 1)',
-                      backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                      borderWidth: 2,
-                      pointRadius: 0,
-                      yAxisID: 'y',
-                      order: 1,
-                    }
-                  ] as any
+                : createCandlestickDatasets()
             }}
             options={{
               responsive: true,
