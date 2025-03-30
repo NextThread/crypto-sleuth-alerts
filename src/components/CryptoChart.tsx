@@ -180,7 +180,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (isLoading && chartData.length === 0) {
     return (
-      <Card className="w-full h-[400px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
+      <Card className="w-full h-[500px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
         <CardContent className="flex flex-col items-center justify-center h-full">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-4 text-muted-foreground">Loading chart data...</p>
@@ -191,7 +191,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (error) {
     return (
-      <Card className="w-full h-[400px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
+      <Card className="w-full h-[500px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
         <CardContent className="flex flex-col items-center justify-center h-full text-destructive">
           <p>Error: {error}</p>
           <button
@@ -207,7 +207,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   
   if (chartData.length === 0) {
     return (
-      <Card className="w-full h-[400px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
+      <Card className="w-full h-[500px] flex items-center justify-center rounded-lg mt-6 backdrop-blur-lg border border-white/10">
         <CardContent className="flex items-center justify-center h-full">
           <p className="text-muted-foreground">No data available</p>
         </CardContent>
@@ -648,8 +648,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   const baseOptions = generateChartOptions(chartData, interval, 'dark');
   
   return (
-    <Card id="crypto-chart-container" className="w-full h-auto rounded-lg mt-6 glass-card overflow-hidden">
-      <CardHeader className="p-4 pb-0">
+    <Card id="crypto-chart-container" className="w-full h-auto rounded-lg mt-4 glass-card overflow-hidden">
+      <CardHeader className="p-3 pb-0">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold">{symbol} Chart</CardTitle>
           <div className="flex items-center gap-2">
@@ -661,9 +661,9 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
         </div>
       </CardHeader>
       
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <TooltipProvider>
-          <div className="mb-4 p-3 bg-black/20 rounded border border-primary/10 text-xs">
+          <div className="mb-3 p-3 bg-black/20 rounded border border-primary/10 text-xs">
             <p className="font-medium mb-1 text-sm flex items-center justify-between">
               <span>AI Analysis:</span>
               <Badge variant={aiAnalysis.confidenceScore > 75 ? "default" : "secondary"}>
@@ -726,7 +726,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           </div>
         </TooltipProvider>
         
-        <div className="h-[320px] relative bg-black/10 rounded-lg border border-white/10 p-2">
+        <div className="h-[480px] relative bg-black/10 rounded-lg border border-white/10 p-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -907,7 +907,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                 } : {})
               }
             }}
-            height={320}
+            height={480}
             ref={chartRef}
           />
         </div>

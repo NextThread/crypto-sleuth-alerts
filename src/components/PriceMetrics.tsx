@@ -76,8 +76,8 @@ const PriceMetrics = ({ symbol }: PriceMetricsProps) => {
   const priceChangePercent = parseFloat(data.priceChangePercent);
   
   return (
-    <div className="glass-card rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
+    <div className="glass-card rounded-lg p-4">
+      <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold">{symbol} Overview</h3>
         <div className="text-xs text-muted-foreground flex items-center">
           <Clock className="w-3 h-3 mr-1" />
@@ -85,7 +85,7 @@ const PriceMetrics = ({ symbol }: PriceMetricsProps) => {
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Current Price */}
         <div className="flex flex-col justify-between">
           <span className="text-xs text-muted-foreground mb-1">Current Price</span>

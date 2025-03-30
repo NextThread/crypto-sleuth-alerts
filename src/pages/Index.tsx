@@ -258,7 +258,7 @@ const Index = () => {
     <Layout>
       <div className="max-w-7xl mx-auto">
         {/* Platform Introduction */}
-        <div className="mb-8 px-4 py-6 rounded-lg glass-panel animate-fade-in">
+        <div className="mb-6 px-4 py-5 rounded-lg glass-panel animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">Welcome to ChartPulse</h1>
@@ -277,7 +277,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
           <div>
             <h1 className="text-2xl font-bold animate-fade-in flex items-center gap-2">
               <LineChart className="h-6 w-6 text-primary animate-pulse" />
@@ -298,7 +298,7 @@ const Index = () => {
         </div>
         
         {searchLimitReached && (
-          <Alert className="mb-6 border-yellow-600/50 bg-yellow-600/10 backdrop-blur-md animate-fade-in shadow-lg">
+          <Alert className="mb-4 border-yellow-600/50 bg-yellow-600/10 backdrop-blur-md animate-fade-in shadow-lg">
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="flex justify-between items-center">
               <div>
@@ -315,11 +315,11 @@ const Index = () => {
           </Alert>
         )}
         
-        <div className="mb-6 animate-fade-in animation-delay-300">
+        <div className="mb-4 animate-fade-in animation-delay-300">
           <PriceMetrics symbol={symbol} />
         </div>
         
-        <div className="mb-6">
+        <div className="mb-4">
           <AnalysisCounter />
         </div>
         
@@ -340,8 +340,9 @@ const Index = () => {
           ))}
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-          <div className="lg:col-span-2 animate-fade-in">
+        {/* Updated chart layout: Chart gets more space */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
+          <div className="lg:col-span-3 animate-fade-in">
             <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
           </div>
           <div className="animate-fade-in animation-delay-300 space-y-6">
