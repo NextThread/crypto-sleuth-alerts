@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -296,6 +297,48 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
   };
   
   const annotations: any = {};
+  
+  // Add current price annotation
+  if (chartData.length > 0) {
+    const lastIndex = chartData.length - 1;
+    const currentPrice = chartData[lastIndex].close;
+    const lastLabel = labels[lastIndex];
+    
+    annotations['currentPrice'] = {
+      type: 'point',
+      xValue: lastLabel,
+      yValue: currentPrice,
+      backgroundColor: '#1EAEDB',  // Bright blue point
+      borderColor: '#fff',
+      borderWidth: 2,
+      radius: 6,
+      z: 100, // Make sure it appears on top of other elements
+    };
+    
+    // Add horizontal line at current price
+    annotations['currentPriceLine'] = {
+      type: 'line',
+      borderColor: '#1EAEDB',
+      borderWidth: 1.5,
+      borderDash: [3, 3],
+      label: {
+        display: true,
+        content: `Current: ${currentPrice.toFixed(2)}`,
+        position: 'end',
+        backgroundColor: '#1EAEDB',
+        color: '#fff',
+        font: {
+          size: 11,
+          weight: 'bold',
+        },
+        padding: 4,
+        xAdjust: 0,
+        yAdjust: 0,
+      },
+      scaleID: 'y',
+      value: currentPrice,
+    };
+  }
   
   if (chartControls.showSupportResistance) {
     supports.slice(0, 3).forEach((level, i) => {
@@ -817,6 +860,13 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          
+          {chartData.length > 0 && (
+            <div className="absolute top-2 left-2 z-10 bg-black/50 text-white text-xs px-3 py-2 rounded-md flex items-center">
+              <span className="w-2 h-2 rounded-full bg-[#1EAEDB] inline-block mr-2"></span>
+              <span>Current: {chartData[chartData.length - 1].close.toFixed(2)}</span>
+            </div>
+          )}
           
           <Line
             data={{
