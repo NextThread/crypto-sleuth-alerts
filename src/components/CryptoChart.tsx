@@ -281,55 +281,18 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     return candleDatasets;
   };
   
-  const createColoredLineDatasets = () => {
-    const segments = [];
-    let currentTrend = null;
-    let startIndex = 0;
-    
-    for (let i = 1; i < chartData.length; i++) {
-      const prevClose = chartData[i-1].close;
-      const currClose = chartData[i].close;
-      const isBullish = currClose >= prevClose;
-      
-      if (currentTrend === null) {
-        currentTrend = isBullish;
-      } else if (currentTrend !== isBullish) {
-        segments.push({
-          start: startIndex,
-          end: i-1,
-          isBullish: currentTrend
-        });
-        startIndex = i-1;
-        currentTrend = isBullish;
-      }
-    }
-    
-    if (startIndex < chartData.length - 1) {
-      segments.push({
-        start: startIndex,
-        end: chartData.length - 1,
-        isBullish: currentTrend
-      });
-    }
-    
-    return segments.map((segment, index) => {
-      const segmentData = new Array(chartData.length).fill(null);
-      for (let i = segment.start; i <= segment.end; i++) {
-        segmentData[i] = closes[i];
-      }
-      
-      return {
-        type: 'line' as const,
-        label: segment.isBullish ? 'Bullish' : 'Bearish',
-        data: segmentData,
-        borderColor: segment.isBullish ? bullColor : bearColor,
-        backgroundColor: segment.isBullish ? `${bullColor}20` : `${bearColor}20`,
-        pointRadius: 0,
-        borderWidth: 2,
-        tension: 0.1,
-        fill: false,
-      };
-    });
+  const createSimpleLineDataset = () => {
+    return [{
+      type: 'line' as const,
+      label: 'Price',
+      data: closes,
+      borderColor: 'rgba(59, 130, 246, 1)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      pointRadius: 0,
+      borderWidth: 2,
+      fill: true,
+      tension: 0.1,
+    }];
   };
   
   const annotations: any = {};
@@ -859,7 +822,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
             data={{
               labels,
               datasets: chartControls.chartType === 'line' 
-                ? createColoredLineDatasets()
+                ? createSimpleLineDataset()
                 : createCandlestickDatasets()
             }}
             options={{
@@ -914,11 +877,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
                           `Volume: ${Math.round(dataPoint.volume)}`,
                         ];
                       } else {
-                        const prevIndex = Math.max(0, index - 1);
-                        const prevClose = chartData[prevIndex].close;
-                        const currClose = dataPoint.close;
-                        const isUp = currClose >= prevClose;
-                        return [`Price: ${dataPoint.close.toFixed(2)} (${isUp ? '↑' : '↓'})`];
+                        return [`Price: ${dataPoint.close.toFixed(2)}`];
                       }
                     },
                   },
