@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -319,21 +318,19 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     annotations['currentPriceLine'] = {
       type: 'line',
       borderColor: '#1EAEDB',
-      borderWidth: 1.5,
-      borderDash: [3, 3],
+      borderWidth: 1,
+      borderDash: [5, 5],  // More pronounced dashed line
       label: {
         display: true,
         content: `Current: ${currentPrice.toFixed(2)}`,
         position: 'end',
-        backgroundColor: '#1EAEDB',
-        color: '#fff',
+        backgroundColor: 'rgba(30, 174, 219, 0.2)',
+        color: '#1EAEDB',
         font: {
-          size: 11,
-          weight: 'bold',
+          size: 10,
+          weight: 'normal',
         },
-        padding: 4,
-        xAdjust: 0,
-        yAdjust: 0,
+        padding: 3,
       },
       scaleID: 'y',
       value: currentPrice,
