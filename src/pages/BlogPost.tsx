@@ -1,11 +1,9 @@
-
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import Layout from '../components/Layout';
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSafeBlogData, BlogPost as BlogPostType } from '../utils/blogDataUtils';
-import CommentsSection from '../components/CommentsSection';
 
 // Import our new components
 import PostHeader from '../components/blog/PostHeader';
@@ -155,7 +153,6 @@ const BlogPost = () => {
           <PostContent post={post} />
           <PostTags post={post} />
           <PostFAQ post={post} />
-          <CommentsSection postId={slug || ""} />
           <RelatedPosts posts={relatedPosts} />
         </article>
       </div>
