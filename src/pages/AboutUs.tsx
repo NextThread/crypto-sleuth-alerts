@@ -27,7 +27,7 @@ const AboutUs = () => {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Our Story</h2>
             <p className="mb-3">
-              ChartPulse began in 2021 when a group of crypto traders, data scientists, and software engineers came together with a 
+              ChartPulse began in 2025 when a group of crypto traders, data scientists, and software engineers came together with a 
               shared frustration: existing market analysis tools either lacked depth, were prohibitively expensive, or too complex 
               for the average trader to use effectively.
             </p>
@@ -50,7 +50,7 @@ const AboutUs = () => {
             <div className="w-full md:w-1/2 space-y-4">
               <h3 className="text-lg font-medium text-foreground">Our Team</h3>
               <p>
-                We're a diverse team of 15+ professionals spanning three continents, bringing together expertise in 
+                We're a diverse team of 3+ professionals spanning three continents, bringing together expertise in 
                 cryptocurrency markets, machine learning, data visualization, and software engineering. Many of our team 
                 members have backgrounds in quantitative finance and have previously worked at major financial institutions 
                 and trading firms.
