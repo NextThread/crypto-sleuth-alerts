@@ -149,7 +149,8 @@ const BlogPost = () => {
         
         <article className="space-y-6">
           <PostHeader post={post} />
-          <PostImage post={post} />
+          {/* Remove showImage prop or set it to false */}
+          {/* <PostImage post={post} /> */}
           <PostContent post={post} />
           <PostTags post={post} />
           <PostFAQ post={post} />

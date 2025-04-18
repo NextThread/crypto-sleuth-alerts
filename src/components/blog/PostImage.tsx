@@ -1,13 +1,17 @@
-
 import { BlogPost, ensureValidImage } from "@/utils/blogDataUtils";
 import { useState, useEffect } from "react";
 
 interface PostImageProps {
   post: BlogPost;
   priority?: boolean;
+  showImage?: boolean; // New prop to control image visibility
 }
 
-const PostImage = ({ post, priority = false }: PostImageProps) => {
+const PostImage = ({ 
+  post, 
+  priority = false, 
+  showImage = false // Default to not showing the image
+}: PostImageProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>("");
@@ -33,6 +37,11 @@ const PostImage = ({ post, priority = false }: PostImageProps) => {
     // Get random fallback image on error
     setImageUrl(ensureValidImage("", Math.floor(Math.random() * 9)));
   };
+
+  // If showImage is false, return null
+  if (!showImage) {
+    return null;
+  }
 
   return (
     <div className="relative rounded-lg overflow-hidden bg-muted/30">
