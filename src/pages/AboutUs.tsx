@@ -99,9 +99,9 @@ const AboutUs = () => {
               We'd love to hear from you! Whether you have questions, feedback, or partnership inquiries:
             </p>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Email:</strong> support@chartpulse.com</li>
-              <li><strong>Twitter:</strong> @ChartPulseApp</li>
-              <li><strong>Discord:</strong> Join our community at discord.gg/chartpulse</li>
+              <li><strong>Email:</strong> chartlyaiteam@gmail.com</li>
+              {/* <li><strong>Twitter:</strong> @ChartPulseApp</li> */}
+              {/* <li><strong>Discord:</strong> Join our community at discord.gg/chartpulse</li> */}
             </ul>
           </section>
           
