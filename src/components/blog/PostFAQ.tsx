@@ -37,9 +37,6 @@ const DEFAULT_FAQS = [
 ];
 
 const PostFAQ: React.FC<PostFAQProps> = ({ post }) => {
-  // Use post.category to potentially filter or customize FAQs in the future
-  // For now, we'll just use our default FAQs
-  
   return (
     <div className="mt-10 border border-border rounded-lg p-6 bg-card/30 backdrop-blur-sm">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -59,12 +56,9 @@ const PostFAQ: React.FC<PostFAQProps> = ({ post }) => {
           </AccordionItem>
         ))}
       </Accordion>
-      
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p>Have more questions? Join our <a href="/community" className="text-primary hover:underline">community forum</a> or <a href="/contact" className="text-primary hover:underline">contact our support team</a>.</p>
-      </div>
     </div>
   );
 };
 
 export default PostFAQ;
+

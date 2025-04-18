@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -16,13 +15,7 @@ const Blog = () => {
   // Categorize posts
   const technicalAnalysisPosts = allPosts.filter(post => post.category?.includes("Technical Analysis"));
   const fundamentalAnalysisPosts = allPosts.filter(post => post.category?.includes("Fundamental Analysis"));
-  const tradingStrategyPosts = allPosts.filter(post => post.category?.includes("Trading Strategies") || post.category?.includes("Trading Strategy"));
-  const cryptoForexPosts = allPosts.filter(post => 
-    post.category?.includes("Crypto") || 
-    post.category?.includes("Forex") || 
-    post.tags?.some(tag => tag.toLowerCase().includes("crypto") || tag.toLowerCase().includes("forex"))
-  );
-  
+
   useEffect(() => {
     if (hash) {
       const element = document.getElementById(hash.substring(1));
@@ -73,8 +66,6 @@ const Blog = () => {
                 <TabsTrigger value="all">All Posts</TabsTrigger>
                 <TabsTrigger value="technical">Technical Analysis</TabsTrigger>
                 <TabsTrigger value="fundamental">Fundamental Analysis</TabsTrigger>
-                <TabsTrigger value="strategies">Trading Strategies</TabsTrigger>
-                <TabsTrigger value="crypto">Crypto & Forex</TabsTrigger>
               </TabsList>
             </div>
 
@@ -91,20 +82,6 @@ const Blog = () => {
                 description="Discover how to evaluate assets based on financial data and economic indicators."
                 id="fundamental"
                 posts={fundamentalAnalysisPosts}
-              />
-              
-              <BlogSection 
-                title="Trading Strategies & Psychology" 
-                description="Explore different trading approaches and the mental aspects of successful trading."
-                id="strategies"
-                posts={tradingStrategyPosts}
-              />
-              
-              <BlogSection 
-                title="Crypto & Forex Trading" 
-                description="Specialized insights for cryptocurrency and foreign exchange markets."
-                id="crypto"
-                posts={cryptoForexPosts}
               />
             </TabsContent>
             
@@ -124,26 +101,6 @@ const Blog = () => {
                 description="Discover how to evaluate assets based on financial data and economic indicators."
                 id="fundamental"
                 posts={fundamentalAnalysisPosts}
-                showViewAll={false}
-              />
-            </TabsContent>
-            
-            <TabsContent value="strategies" className="space-y-8">
-              <BlogSection 
-                title="Trading Strategies & Psychology" 
-                description="Explore different trading approaches and the mental aspects of successful trading."
-                id="strategies"
-                posts={tradingStrategyPosts}
-                showViewAll={false}
-              />
-            </TabsContent>
-            
-            <TabsContent value="crypto" className="space-y-8">
-              <BlogSection 
-                title="Crypto & Forex Trading" 
-                description="Specialized insights for cryptocurrency and foreign exchange markets."
-                id="crypto"
-                posts={cryptoForexPosts}
                 showViewAll={false}
               />
             </TabsContent>
