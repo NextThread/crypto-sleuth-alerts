@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -20,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, BarChart2, LineChart, TrendingUp, Info, Sparkles } from 'lucide-react';
+import { AlertTriangle, BarChart2, LineChart, TrendingUp, Info, Sparkles, Search } from 'lucide-react';
 import { doc, getDoc, setDoc, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -72,6 +73,10 @@ const Index = () => {
   const [chartData, setChartData] = useState([]);
   const [totalSearches, setTotalSearches] = useState<number>(0);
   
+  // New state for controlling when to show analysis
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentSubscription, decrementSearches } = useSubscription();
@@ -114,6 +119,7 @@ const Index = () => {
     
     if (symbolParam) {
       setSymbol(symbolParam.toUpperCase());
+      setHasSearched(true);
     }
     
     if (intervalParam && INTERVALS.includes(intervalParam)) {
@@ -137,67 +143,70 @@ const Index = () => {
   }, [symbol, interval, toast]);
   
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getKlineData(symbol, interval);
-        setChartData(data);
-      } catch (err) {
-        console.error('Error fetching chart data:', err);
-      }
-    };
-    
-    fetchData();
-    
-    const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
-    const ws = new WebSocket(wsEndpoint);
-    
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.k) {
-        const { t: openTime, o: open, h: high, l: low, c: close, v: volume, T: closeTime, n: numberOfTrades } = message.k;
-        
-        setChartData(prev => {
-          const newData = [...prev];
-          const lastIndex = newData.findIndex(candle => candle.openTime === openTime);
+    // Only fetch data if showAnalysis is true
+    if (showAnalysis) {
+      const fetchData = async () => {
+        try {
+          const data = await getKlineData(symbol, interval);
+          setChartData(data);
+        } catch (err) {
+          console.error('Error fetching chart data:', err);
+        }
+      };
+      
+      fetchData();
+      
+      const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
+      const ws = new WebSocket(wsEndpoint);
+      
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.k) {
+          const { t: openTime, o: open, h: high, l: low, c: close, v: volume, T: closeTime, n: numberOfTrades } = message.k;
           
-          if (lastIndex >= 0) {
-            newData[lastIndex] = {
-              openTime,
-              open: parseFloat(open),
-              high: parseFloat(high),
-              low: parseFloat(low),
-              close: parseFloat(close),
-              volume: parseFloat(volume),
-              closeTime,
-              quoteAssetVolume: 0,
-              numberOfTrades,
-            };
-          } else if (newData.length > 0 && openTime > newData[newData.length - 1].openTime) {
-            newData.push({
-              openTime,
-              open: parseFloat(open),
-              high: parseFloat(high),
-              low: parseFloat(low),
-              close: parseFloat(close),
-              volume: parseFloat(volume),
-              closeTime,
-              quoteAssetVolume: 0,
-              numberOfTrades,
-            });
-            if (newData.length > 500) {
-              newData.shift();
+          setChartData(prev => {
+            const newData = [...prev];
+            const lastIndex = newData.findIndex(candle => candle.openTime === openTime);
+            
+            if (lastIndex >= 0) {
+              newData[lastIndex] = {
+                openTime,
+                open: parseFloat(open),
+                high: parseFloat(high),
+                low: parseFloat(low),
+                close: parseFloat(close),
+                volume: parseFloat(volume),
+                closeTime,
+                quoteAssetVolume: 0,
+                numberOfTrades,
+              };
+            } else if (newData.length > 0 && openTime > newData[newData.length - 1].openTime) {
+              newData.push({
+                openTime,
+                open: parseFloat(open),
+                high: parseFloat(high),
+                low: parseFloat(low),
+                close: parseFloat(close),
+                volume: parseFloat(volume),
+                closeTime,
+                quoteAssetVolume: 0,
+                numberOfTrades,
+              });
+              if (newData.length > 500) {
+                newData.shift();
+              }
             }
-          }
-          
-          return newData;
-        });
-      }
-    };
-    
-    return () => {
-      ws.close();
-    };
-  }, [symbol, interval]);
+            
+            return newData;
+          });
+        }
+      };
+      
+      return () => {
+        ws.close();
+      };
+    }
+  }, [symbol, interval, showAnalysis]);
   
   useEffect(() => {
     localStorage.setItem('totalSearches', totalSearches.toString());
@@ -220,6 +229,8 @@ const Index = () => {
     if (newSymbol !== symbol) {
       decrementSearches();
       setSymbol(newSymbol);
+      setHasSearched(true);
+      setShowAnalysis(false); // Reset analysis when a new search is made
       
       try {
         const countRef = doc(db, 'stats', CHART_COUNT_KEY);
@@ -251,6 +262,24 @@ const Index = () => {
     };
     
     setChartControls(mergedControls);
+  };
+
+  const handleStartAnalysis = () => {
+    setShowAnalysis(true);
+    
+    toast({
+      title: "Analysis Started",
+      description: `Generating detailed analysis for ${symbol}`,
+      duration: 3000,
+    });
+
+    // Scroll to analysis section
+    setTimeout(() => {
+      const analysisSection = document.getElementById('analysis-section');
+      if (analysisSection) {
+        analysisSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
   
   return (
@@ -313,54 +342,77 @@ const Index = () => {
             </AlertDescription>
           </Alert>
         )}
-        
-        <div className="mb-4 animate-fade-in animation-delay-300">
-          <PriceMetrics symbol={symbol} />
-        </div>
-        
-        <div className="mb-4">
-          <AnalysisCounter />
-        </div>
-        
-        <div className="flex overflow-x-auto scrollbar-none space-x-1 mb-4 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600 shadow-md">
-          {INTERVALS.map((item) => (
-            <button
-              key={item}
-              onClick={() => handleIntervalChange(item)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5 ${
-                interval === item
-                  ? 'bg-primary/90 text-primary-foreground shadow-md'
-                  : 'hover:bg-secondary/80 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {interval === item && <TrendingUp className="h-3.5 w-3.5" />}
-              {getTimeLabelByInterval(item)}
-            </button>
-          ))}
-        </div>
-        
-        {/* Updated chart layout: Chart gets more space */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
-          <div className="lg:col-span-3 animate-fade-in">
-            <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
+
+        {hasSearched && !showAnalysis && (
+          <div className="mb-6 px-4 py-5 rounded-lg glass-panel animate-fade-in border border-primary/20 mt-8">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Search className="h-12 w-12 text-primary" />
+              <h2 className="text-xl font-bold">Ready to analyze {symbol}?</h2>
+              <p className="text-muted-foreground">
+                Click the button below to generate a comprehensive technical analysis for {symbol} with advanced patterns, 
+                indicators, and trading insights.
+              </p>
+              <Button 
+                onClick={handleStartAnalysis} 
+                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-medium"
+              >
+                <BarChart2 className="mr-2 h-5 w-5" /> Analyse Now
+              </Button>
+            </div>
           </div>
-          <div className="animate-fade-in animation-delay-300 space-y-6">
-            <ChartControls onControlsChange={handleChartControlsChange} />
-            <TechnicalAnalysis symbol={symbol} interval={interval} />
-          </div>
-        </div>
+        )}
         
-        <div className="mb-10 animate-fade-in">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <BarChart2 className="h-5 w-5 text-primary" />
-            In-Depth Technical Analysis
-          </h2>
-          <TechnicalSummary symbol={symbol} interval={interval} />
-        </div>
-        
-        <div className="mb-10">
-          <TradeDetails chartData={chartData} symbol={symbol} />
-        </div>
+        {hasSearched && showAnalysis && (
+          <>
+            <div className="mb-4 animate-fade-in animation-delay-300">
+              <PriceMetrics symbol={symbol} />
+            </div>
+            
+            <div className="mb-4">
+              <AnalysisCounter />
+            </div>
+            
+            <div id="analysis-section" className="flex overflow-x-auto scrollbar-none space-x-1 mb-4 glass-panel inline-flex p-1 rounded-lg animate-fade-in animation-delay-600 shadow-md">
+              {INTERVALS.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => handleIntervalChange(item)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5 ${
+                    interval === item
+                      ? 'bg-primary/90 text-primary-foreground shadow-md'
+                      : 'hover:bg-secondary/80 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {interval === item && <TrendingUp className="h-3.5 w-3.5" />}
+                  {getTimeLabelByInterval(item)}
+                </button>
+              ))}
+            </div>
+            
+            {/* Updated chart layout: Chart gets more space */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
+              <div className="lg:col-span-3 animate-fade-in">
+                <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
+              </div>
+              <div className="animate-fade-in animation-delay-300 space-y-6">
+                <ChartControls onControlsChange={handleChartControlsChange} />
+                <TechnicalAnalysis symbol={symbol} interval={interval} />
+              </div>
+            </div>
+            
+            <div className="mb-10 animate-fade-in">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <BarChart2 className="h-5 w-5 text-primary" />
+                In-Depth Technical Analysis
+              </h2>
+              <TechnicalSummary symbol={symbol} interval={interval} />
+            </div>
+            
+            <div className="mb-10">
+              <TradeDetails chartData={chartData} symbol={symbol} />
+            </div>
+          </>
+        )}
         
         <div className="mb-16 pt-4">
           <HowWeWork />
