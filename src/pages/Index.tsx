@@ -73,9 +73,11 @@ const Index = () => {
   const [chartData, setChartData] = useState([]);
   const [totalSearches, setTotalSearches] = useState<number>(0);
   
-  // New state for controlling when to show analysis
+  // State for controlling when to show analysis
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  // New state to track if user has manually searched, requiring URL updates
+  const [shouldUpdateURL, setShouldUpdateURL] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -113,6 +115,7 @@ const Index = () => {
   }, [currentSubscription.searchesRemaining]);
   
   useEffect(() => {
+    // Check URL parameters only when user navigates directly to a URL with params
     const urlParams = new URLSearchParams(window.location.search);
     const symbolParam = urlParams.get('symbol');
     const intervalParam = urlParams.get('interval') as TimeInterval | null;
@@ -120,6 +123,7 @@ const Index = () => {
     if (symbolParam) {
       setSymbol(symbolParam.toUpperCase());
       setHasSearched(true);
+      setShouldUpdateURL(true);
     }
     
     if (intervalParam && INTERVALS.includes(intervalParam)) {
@@ -128,19 +132,22 @@ const Index = () => {
   }, []);
   
   useEffect(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('symbol', symbol);
-    url.searchParams.set('interval', interval);
-    window.history.replaceState({}, '', url.toString());
-    
-    if (symbol !== DEFAULT_SYMBOL) {
-      toast({
-        title: 'Symbol Changed',
-        description: `Now analyzing ${symbol}`,
-        duration: 3000,
-      });
+    // Only update URL if user has performed a search
+    if (shouldUpdateURL) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('symbol', symbol);
+      url.searchParams.set('interval', interval);
+      window.history.replaceState({}, '', url.toString());
+      
+      if (symbol !== DEFAULT_SYMBOL) {
+        toast({
+          title: 'Symbol Changed',
+          description: `Now analyzing ${symbol}`,
+          duration: 3000,
+        });
+      }
     }
-  }, [symbol, interval, toast]);
+  }, [symbol, interval, toast, shouldUpdateURL]);
   
   useEffect(() => {
     // Only fetch data if showAnalysis is true
@@ -231,6 +238,7 @@ const Index = () => {
       setSymbol(newSymbol);
       setHasSearched(true);
       setShowAnalysis(false); // Reset analysis when a new search is made
+      setShouldUpdateURL(true); // Enable URL updates after user has searched
       
       try {
         const countRef = doc(db, 'stats', CHART_COUNT_KEY);
@@ -250,6 +258,10 @@ const Index = () => {
   
   const handleIntervalChange = (newInterval: TimeInterval) => {
     setInterval(newInterval);
+    // Update URL when user changes interval, but only if they've already searched
+    if (hasSearched) {
+      setShouldUpdateURL(true);
+    }
   };
   
   const handleChartControlsChange = (newControls: ChartControlsState) => {
@@ -273,6 +285,9 @@ const Index = () => {
       duration: 3000,
     });
 
+    // Enable URL updates when starting analysis
+    setShouldUpdateURL(true);
+
     // Scroll to analysis section
     setTimeout(() => {
       const analysisSection = document.getElementById('analysis-section');
@@ -281,6 +296,13 @@ const Index = () => {
       }
     }, 100);
   };
+
+  // Clean URL if this is the initial page load and no search has been performed
+  useEffect(() => {
+    if (!shouldUpdateURL && window.location.search) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [shouldUpdateURL]);
   
   return (
     <Layout>
