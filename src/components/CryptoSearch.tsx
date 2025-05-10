@@ -40,7 +40,7 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
         setIsLoading(true);
         try {
           const searchResults = await searchSymbols(searchQuery);
-          setResults(searchResults.slice(0, 10));
+          setResults(searchResults);
           setIsOpen(true);
         } catch (error) {
           console.error('Error searching symbols:', error);
@@ -88,7 +88,7 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={handleSearchFocus}
-          placeholder={user ? "Search crypto (BTC, ETH, ...)" : "Sign in to search coins"}
+          placeholder={user ? "Search crypto & forex pairs..." : "Sign in to search markets"}
           className={`w-full pl-10 pr-10 py-2 h-10 bg-secondary/50 text-foreground border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 ${!user ? 'cursor-pointer hover:bg-secondary/70' : ''}`}
           disabled={!user}
         />
@@ -113,6 +113,9 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
               <div className="flex items-center">
                 <span className="font-medium">{result.baseAsset}</span>
                 <span className="text-xs text-muted-foreground ml-2">{result.quoteAsset}</span>
+                <span className="text-xs bg-secondary/50 px-1.5 py-0.5 rounded ml-2">
+                  {result.category}
+                </span>
               </div>
               <span className="text-xs font-mono text-muted-foreground">{result.symbol}</span>
             </button>

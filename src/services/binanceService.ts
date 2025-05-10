@@ -5,6 +5,7 @@ export interface CryptoSymbol {
   baseAsset: string;
   quoteAsset: string;
   status: string;
+  category: 'Crypto' | 'Forex';
 }
 
 export interface KlineData {
@@ -47,12 +48,45 @@ export type TimeInterval = '1s' | '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '1w
 
 const API_BASE_URL = 'https://api.binance.com/api/v3';
 
+// Common forex pairs to include
+const FOREX_PAIRS = [
+  { symbol: 'EURUSD', baseAsset: 'EUR', quoteAsset: 'USD' },
+  { symbol: 'GBPUSD', baseAsset: 'GBP', quoteAsset: 'USD' },
+  { symbol: 'USDJPY', baseAsset: 'USD', quoteAsset: 'JPY' },
+  { symbol: 'AUDUSD', baseAsset: 'AUD', quoteAsset: 'USD' },
+  { symbol: 'USDCAD', baseAsset: 'USD', quoteAsset: 'CAD' },
+  { symbol: 'NZDUSD', baseAsset: 'NZD', quoteAsset: 'USD' },
+  { symbol: 'USDCHF', baseAsset: 'USD', quoteAsset: 'CHF' },
+  { symbol: 'EURGBP', baseAsset: 'EUR', quoteAsset: 'GBP' },
+  { symbol: 'EURJPY', baseAsset: 'EUR', quoteAsset: 'JPY' },
+  { symbol: 'GBPJPY', baseAsset: 'GBP', quoteAsset: 'JPY' },
+];
+
+// Popular crypto assets to ensure they appear in search
+const POPULAR_CRYPTO = ['BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'SOL', 'DOT', 'DOGE', 'SHIB', 'AVAX', 'MATIC'];
+
 // Get all available symbols
 export const getSymbols = async (): Promise<CryptoSymbol[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/exchangeInfo`);
     const data = await response.json();
-    return data.symbols.filter((symbol: CryptoSymbol) => symbol.status === 'TRADING');
+    
+    // Filter and categorize crypto symbols
+    const cryptoSymbols = data.symbols
+      .filter((symbol: any) => symbol.status === 'TRADING')
+      .map((symbol: any) => ({
+        ...symbol,
+        category: 'Crypto' as const
+      }));
+    
+    // Add forex pairs
+    const forexSymbols = FOREX_PAIRS.map(pair => ({
+      ...pair,
+      status: 'TRADING',
+      category: 'Forex' as const
+    }));
+    
+    return [...cryptoSymbols, ...forexSymbols];
   } catch (error) {
     console.error('Error fetching symbols:', error);
     throw error;
@@ -63,10 +97,25 @@ export const getSymbols = async (): Promise<CryptoSymbol[]> => {
 export const searchSymbols = async (query: string): Promise<CryptoSymbol[]> => {
   try {
     const symbols = await getSymbols();
-    return symbols.filter((symbol) => 
-      symbol.symbol.toLowerCase().includes(query.toLowerCase()) ||
-      symbol.baseAsset.toLowerCase().includes(query.toLowerCase())
+    const lowercaseQuery = query.toLowerCase();
+    
+    // First, check for direct matches with popular crypto assets to ensure they appear
+    const popularMatches = symbols.filter(symbol => 
+      POPULAR_CRYPTO.includes(symbol.baseAsset) && 
+      symbol.baseAsset.toLowerCase().includes(lowercaseQuery)
     );
+    
+    // Then get other matches
+    const otherMatches = symbols.filter(symbol => 
+      !POPULAR_CRYPTO.includes(symbol.baseAsset) && (
+        symbol.symbol.toLowerCase().includes(lowercaseQuery) ||
+        symbol.baseAsset.toLowerCase().includes(lowercaseQuery) ||
+        symbol.quoteAsset.toLowerCase().includes(lowercaseQuery)
+      )
+    );
+    
+    // Combine and limit results, ensuring popular cryptos appear first
+    return [...popularMatches, ...otherMatches].slice(0, 15);
   } catch (error) {
     console.error('Error searching symbols:', error);
     throw error;
