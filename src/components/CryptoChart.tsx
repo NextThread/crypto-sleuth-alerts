@@ -833,7 +833,7 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           </div>
         </TooltipProvider>
         
-        <div className="h-[480px] relative bg-black/10 rounded-lg border border-white/10 p-2">
+        <div className="h-[500px] relative bg-black/10 rounded-lg border border-white/10 p-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

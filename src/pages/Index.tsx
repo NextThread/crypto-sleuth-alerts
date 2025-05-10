@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -411,7 +410,7 @@ const Index = () => {
               ))}
             </div>
             
-            {/* Updated chart layout: Chart gets more space */}
+            {/* Updated chart layout with fixed height */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
               <div className="lg:col-span-3 animate-fade-in">
                 <CryptoChart symbol={symbol} interval={interval} chartControls={chartControls} />
