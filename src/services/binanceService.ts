@@ -5,7 +5,7 @@ export interface CryptoSymbol {
   baseAsset: string;
   quoteAsset: string;
   status: string;
-  category: 'Crypto' | 'Forex';
+  category: 'Crypto' | 'Forex' | 'Commodities';
 }
 
 export interface KlineData {
@@ -62,6 +62,15 @@ const FOREX_PAIRS = [
   { symbol: 'GBPJPY', baseAsset: 'GBP', quoteAsset: 'JPY' },
 ];
 
+// Popular commodities to include
+const COMMODITIES = [
+  { symbol: 'XAUUSDT', baseAsset: 'XAU', quoteAsset: 'USDT', name: 'Gold' },
+  { symbol: 'XAGUSDT', baseAsset: 'XAG', quoteAsset: 'USDT', name: 'Silver' },
+  { symbol: 'WTIUSDT', baseAsset: 'WTI', quoteAsset: 'USDT', name: 'Crude Oil WTI' },
+  { symbol: 'BRENTUSDT', baseAsset: 'BRENT', quoteAsset: 'USDT', name: 'Crude Oil Brent' },
+  { symbol: 'NATGASUSDT', baseAsset: 'NATGAS', quoteAsset: 'USDT', name: 'Natural Gas' },
+];
+
 // Popular crypto assets to ensure they appear in search
 const POPULAR_CRYPTO = ['BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'SOL', 'DOT', 'DOGE', 'SHIB', 'AVAX', 'MATIC'];
 
@@ -86,7 +95,14 @@ export const getSymbols = async (): Promise<CryptoSymbol[]> => {
       category: 'Forex' as const
     }));
     
-    return [...cryptoSymbols, ...forexSymbols];
+    // Add commodities
+    const commoditiesSymbols = COMMODITIES.map(commodity => ({
+      ...commodity,
+      status: 'TRADING',
+      category: 'Commodities' as const
+    }));
+    
+    return [...cryptoSymbols, ...forexSymbols, ...commoditiesSymbols];
   } catch (error) {
     console.error('Error fetching symbols:', error);
     throw error;
@@ -99,23 +115,39 @@ export const searchSymbols = async (query: string): Promise<CryptoSymbol[]> => {
     const symbols = await getSymbols();
     const lowercaseQuery = query.toLowerCase();
     
+    // Check for commodity names in search query
+    const commodityMatches = symbols.filter(
+      symbol => 
+        symbol.category === 'Commodities' && 
+        ((symbol as any).name?.toLowerCase().includes(lowercaseQuery) || 
+         symbol.baseAsset.toLowerCase().includes(lowercaseQuery))
+    );
+    
     // First, check for direct matches with popular crypto assets to ensure they appear
     const popularMatches = symbols.filter(symbol => 
       POPULAR_CRYPTO.includes(symbol.baseAsset) && 
       symbol.baseAsset.toLowerCase().includes(lowercaseQuery)
     );
     
-    // Then get other matches
-    const otherMatches = symbols.filter(symbol => 
-      !POPULAR_CRYPTO.includes(symbol.baseAsset) && (
-        symbol.symbol.toLowerCase().includes(lowercaseQuery) ||
-        symbol.baseAsset.toLowerCase().includes(lowercaseQuery) ||
-        symbol.quoteAsset.toLowerCase().includes(lowercaseQuery)
-      )
+    // Check for forex pairs
+    const forexMatches = symbols.filter(symbol => 
+      symbol.category === 'Forex' &&
+      (symbol.symbol.toLowerCase().includes(lowercaseQuery) ||
+       symbol.baseAsset.toLowerCase().includes(lowercaseQuery) ||
+       symbol.quoteAsset.toLowerCase().includes(lowercaseQuery))
     );
     
-    // Combine and limit results, ensuring popular cryptos appear first
-    return [...popularMatches, ...otherMatches].slice(0, 15);
+    // Then get other matches
+    const otherMatches = symbols.filter(symbol => 
+      symbol.category === 'Crypto' &&
+      !POPULAR_CRYPTO.includes(symbol.baseAsset) && 
+      (symbol.symbol.toLowerCase().includes(lowercaseQuery) ||
+       symbol.baseAsset.toLowerCase().includes(lowercaseQuery) ||
+       symbol.quoteAsset.toLowerCase().includes(lowercaseQuery))
+    );
+    
+    // Combine and limit results, ensuring commodities and popular cryptos appear first
+    return [...commodityMatches, ...popularMatches, ...forexMatches, ...otherMatches].slice(0, 15);
   } catch (error) {
     console.error('Error searching symbols:', error);
     throw error;

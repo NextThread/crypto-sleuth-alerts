@@ -73,6 +73,28 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
     }
   };
   
+  // Function to get color based on category
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Crypto':
+        return 'bg-blue-500/20 text-blue-500';
+      case 'Forex':
+        return 'bg-green-500/20 text-green-500';
+      case 'Commodities':
+        return 'bg-yellow-500/20 text-yellow-500';
+      default:
+        return 'bg-secondary/50';
+    }
+  };
+
+  // Function to get asset name or display special names for commodities
+  const getAssetName = (result: CryptoSymbol) => {
+    if (result.category === 'Commodities' && (result as any).name) {
+      return (result as any).name;
+    }
+    return result.baseAsset;
+  };
+  
   return (
     <div className="relative w-full md:w-72" ref={searchRef}>
       <div className="relative">
@@ -88,7 +110,7 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={handleSearchFocus}
-          placeholder={user ? "Search crypto & forex pairs..." : "Sign in to search markets"}
+          placeholder={user ? "Search crypto, forex & commodities..." : "Sign in to search markets"}
           className={`w-full pl-10 pr-10 py-2 h-10 bg-secondary/50 text-foreground border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 ${!user ? 'cursor-pointer hover:bg-secondary/70' : ''}`}
           disabled={!user}
         />
@@ -111,9 +133,9 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
               className="w-full px-4 py-2 text-left hover:bg-primary/10 transition-colors duration-150 flex items-center justify-between"
             >
               <div className="flex items-center">
-                <span className="font-medium">{result.baseAsset}</span>
+                <span className="font-medium">{getAssetName(result)}</span>
                 <span className="text-xs text-muted-foreground ml-2">{result.quoteAsset}</span>
-                <span className="text-xs bg-secondary/50 px-1.5 py-0.5 rounded ml-2">
+                <span className={`text-xs px-1.5 py-0.5 rounded ml-2 ${getCategoryColor(result.category)}`}>
                   {result.category}
                 </span>
               </div>
