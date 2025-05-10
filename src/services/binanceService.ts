@@ -47,6 +47,11 @@ export type TimeInterval = '1s' | '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '1w
 
 const API_BASE_URL = 'https://api.binance.com/api/v3';
 
+// WebSocket connection management for Forex and Commodities
+const forexWebSockets = new Map<string, any>();
+const lastForexPrices = new Map<string, number>();
+const forexCallbacks = new Map<string, Set<(data: any) => void>>();
+
 // Common forex pairs to include
 const FOREX_PAIRS = [
   { symbol: 'EURUSD', baseAsset: 'EUR', quoteAsset: 'USD' },
@@ -338,4 +343,143 @@ export const get24hTicker = async (symbol: string): Promise<TickerData> => {
     console.error(`Error fetching 24h ticker for ${symbol}:`, error);
     throw error;
   }
+};
+
+// Create a simulated WebSocket for Forex and Commodities
+const createForexWebSocket = (symbol: string, interval: TimeInterval) => {
+  // If we already have a WebSocket for this symbol+interval, return it
+  const key = `${symbol}_${interval}`;
+  
+  if (forexWebSockets.has(key)) {
+    return forexWebSockets.get(key);
+  }
+  
+  // Set initial price
+  if (!lastForexPrices.has(symbol)) {
+    lastForexPrices.set(symbol, getPriceForSymbol(symbol));
+  }
+  
+  // Create callbacks set if it doesn't exist
+  if (!forexCallbacks.has(key)) {
+    forexCallbacks.set(key, new Set());
+  }
+  
+  // Set up interval for simulated price updates
+  const intervalMs = (() => {
+    switch(interval) {
+      case '1s': return 1000;
+      case '1m': return 1000 * 5; // faster updates for demo purposes
+      case '5m': return 1000 * 5;
+      case '15m': return 1000 * 5;
+      case '1h': return 1000 * 5;
+      case '4h': return 1000 * 10;
+      case '1d': return 1000 * 10;
+      case '1w': return 1000 * 15;
+      case '1M': return 1000 * 20;
+      default: return 1000 * 5;
+    }
+  })();
+  
+  // Create simulated WebSocket
+  const timer = setInterval(() => {
+    const currentPrice = lastForexPrices.get(symbol)!;
+    const volatility = getVolatilityForSymbol(symbol);
+    
+    // Generate random price movement with some trend component
+    const randomChange = (Math.random() - 0.5) * volatility * currentPrice;
+    const trendComponent = Math.sin(Date.now() / 10000000) * volatility * currentPrice * 0.5;
+    const newPrice = Math.max(currentPrice + randomChange + trendComponent, 0.00001);
+    
+    // Update stored price
+    lastForexPrices.set(symbol, newPrice);
+    
+    // Generate high and low values around the new price
+    const amplitude = Math.random() * volatility * newPrice * 0.5;
+    const high = newPrice + amplitude;
+    const low = Math.max(newPrice - amplitude, 0.00001);
+    
+    // Create simulated kline data
+    const now = Date.now();
+    const klineData = {
+      e: 'kline',
+      E: now,
+      s: symbol,
+      k: {
+        t: now - intervalMs, // open time
+        T: now, // close time
+        s: symbol,
+        i: interval,
+        f: 100,
+        L: 200,
+        o: currentPrice.toString(), // open price
+        c: newPrice.toString(), // close price
+        h: high.toString(), // high price
+        l: low.toString(), // low price
+        v: (Math.random() * 100 + 10).toString(), // volume
+        n: Math.floor(Math.random() * 50 + 5), // number of trades
+        x: false, // is closed
+        q: (Math.random() * 100000 + 1000).toString(), // quote asset volume
+        V: (Math.random() * 50 + 5).toString(), // taker buy base asset volume
+        Q: (Math.random() * 50000 + 500).toString(), // taker buy quote asset volume
+      }
+    };
+    
+    // Notify all callbacks
+    const callbacks = forexCallbacks.get(key);
+    if (callbacks) {
+      callbacks.forEach(callback => callback(klineData));
+    }
+  }, intervalMs);
+  
+  // Store the timer reference
+  forexWebSockets.set(key, timer);
+  
+  // Create a mock WebSocket object to return
+  return {
+    onmessage: (callback: (event: { data: string }) => void) => {
+      // Add the callback to our set
+      const key = `${symbol}_${interval}`;
+      const callbacks = forexCallbacks.get(key);
+      if (callbacks) {
+        callbacks.add((data) => {
+          callback({ data: JSON.stringify(data) });
+        });
+      }
+    },
+    close: () => {
+      clearInterval(timer);
+      forexWebSockets.delete(key);
+      forexCallbacks.delete(key);
+    }
+  };
+};
+
+// Connect to WebSocket for real-time updates (both real and simulated)
+export const connectToKlineWebSocket = (
+  symbol: string, 
+  interval: TimeInterval, 
+  onMessage: (data: any) => void
+): { close: () => void } => {
+  // For Forex and Commodities, use simulated WebSocket
+  if (isForexOrCommodity(symbol)) {
+    const mockWs = createForexWebSocket(symbol, interval);
+    mockWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      onMessage(data);
+    };
+    return { close: () => mockWs.close() };
+  }
+  
+  // For crypto, use real Binance WebSocket
+  const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
+  const ws = new WebSocket(wsEndpoint);
+  
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    onMessage(data);
+  };
+  
+  return {
+    close: () => ws.close()
+  };
 };

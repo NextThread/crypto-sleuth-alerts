@@ -13,7 +13,7 @@ import HowWeWork from '../components/HowWeWork';
 import AnalysisCounter from '../components/AnalysisCounter';
 import BacktestingResults from '../components/BacktestingResults';
 import CryptoRecommendations from '../components/CryptoRecommendations';
-import { TimeInterval, getKlineData } from '../services/binanceService';
+import { TimeInterval, getKlineData, connectToKlineWebSocket } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
@@ -162,11 +162,8 @@ const Index = () => {
       
       fetchData();
       
-      const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
-      const ws = new WebSocket(wsEndpoint);
-      
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
+      // Use the new connectToKlineWebSocket function for both crypto and forex
+      const wsConnection = connectToKlineWebSocket(symbol, interval, (message) => {
         if (message.k) {
           const { t: openTime, o: open, h: high, l: low, c: close, v: volume, T: closeTime, n: numberOfTrades } = message.k;
           
@@ -206,10 +203,10 @@ const Index = () => {
             return newData;
           });
         }
-      };
+      });
       
       return () => {
-        ws.close();
+        wsConnection.close();
       };
     }
   }, [symbol, interval, showAnalysis]);

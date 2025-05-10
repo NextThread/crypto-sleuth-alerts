@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { TickerData, get24hTicker } from '../services/binanceService';
+import { TickerData, get24hTicker, connectToKlineWebSocket } from '../services/binanceService';
 import { formatPrice, formatPriceChange, formatVolume, getColorClass } from '../utils/chartUtils';
 import { ArrowUpRight, ArrowDownRight, BarChart3, Gauge, Clock } from 'lucide-react';
 
@@ -35,10 +35,34 @@ const PriceMetrics = ({ symbol }: PriceMetricsProps) => {
     
     fetchData();
     
-    // Setup periodic refresh
-    const interval = setInterval(fetchData, 10000); // Update every 10 seconds
+    // Connect to WebSocket for real-time price updates
+    const wsConnection = connectToKlineWebSocket(symbol, '1m', (message) => {
+      if (message.k && data) {
+        const kline = message.k;
+        // Update the last price from the real-time feed
+        setData(prevData => {
+          if (!prevData) return null;
+          
+          const newPrice = kline.c;
+          const oldPrice = prevData.lastPrice;
+          const priceDiff = parseFloat(newPrice) - parseFloat(oldPrice);
+          const percentChange = (priceDiff / parseFloat(oldPrice)) * 100;
+          
+          return {
+            ...prevData,
+            lastPrice: newPrice,
+            priceChange: String(priceDiff.toFixed(8)),
+            priceChangePercent: String(percentChange.toFixed(2))
+          };
+        });
+        
+        setLastUpdated(new Date());
+      }
+    });
     
-    return () => clearInterval(interval);
+    return () => {
+      wsConnection.close();
+    };
   }, [symbol]);
   
   if (isLoading && !data) {
