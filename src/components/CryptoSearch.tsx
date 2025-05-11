@@ -4,6 +4,8 @@ import { Search, X, Lock } from 'lucide-react';
 import { CryptoSymbol, searchSymbols } from '../services/binanceService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface CryptoSearchProps {
   onSymbolSelect: (symbol: string) => void;
@@ -17,7 +19,12 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { currentSubscription } = useSubscription();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Check if user has an active subscription
+  const hasSubscription = !!currentSubscription.planId;
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -56,7 +63,17 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
     }
   }, [searchQuery, user]);
   
-  const handleSelectSymbol = (symbol: string) => {
+  const handleSelectSymbol = (symbol: string, category: string) => {
+    // Check if it's a premium category (Forex/Commodities) and user doesn't have subscription
+    if ((category === 'Forex' || category === 'Commodities') && !hasSubscription) {
+      toast({
+        title: "Premium Feature",
+        description: "Forex and Commodities trading requires a subscription plan",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     onSymbolSelect(symbol);
     setSearchQuery('');
     setIsOpen(false);
@@ -126,22 +143,36 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
       
       {isOpen && results.length > 0 && (
         <div className="absolute z-10 mt-1 w-full overflow-hidden glass-panel rounded-lg shadow-lg animate-fade-in divide-y divide-border">
-          {results.map((result) => (
-            <button
-              key={result.symbol}
-              onClick={() => handleSelectSymbol(result.symbol)}
-              className="w-full px-4 py-2 text-left hover:bg-primary/10 transition-colors duration-150 flex items-center justify-between"
-            >
-              <div className="flex items-center">
-                <span className="font-medium">{getAssetName(result)}</span>
-                <span className="text-xs text-muted-foreground ml-2">{result.quoteAsset}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded ml-2 ${getCategoryColor(result.category)}`}>
-                  {result.category}
-                </span>
-              </div>
-              <span className="text-xs font-mono text-muted-foreground">{result.symbol}</span>
-            </button>
-          ))}
+          {results.map((result) => {
+            const isPremiumCategory = result.category === 'Forex' || result.category === 'Commodities';
+            const isDisabled = isPremiumCategory && !hasSubscription;
+            
+            return (
+              <button
+                key={result.symbol}
+                onClick={() => handleSelectSymbol(result.symbol, result.category)}
+                className={`w-full px-4 py-2 text-left transition-colors duration-150 flex items-center justify-between
+                  ${isDisabled 
+                    ? 'cursor-not-allowed bg-secondary/20 opacity-70' 
+                    : 'hover:bg-primary/10'}`}
+                disabled={isDisabled}
+              >
+                <div className="flex items-center">
+                  <span className="font-medium">{getAssetName(result)}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{result.quoteAsset}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ml-2 ${getCategoryColor(result.category)}`}>
+                    {result.category}
+                  </span>
+                  
+                  {/* Show lock icon for premium categories when user has no subscription */}
+                  {isDisabled && (
+                    <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                  )}
+                </div>
+                <span className="text-xs font-mono text-muted-foreground">{result.symbol}</span>
+              </button>
+            );
+          })}
         </div>
       )}
       
