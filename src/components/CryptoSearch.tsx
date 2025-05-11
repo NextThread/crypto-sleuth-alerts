@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, Lock } from 'lucide-react';
 import { CryptoSymbol, searchSymbols } from '../services/binanceService';
@@ -6,6 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CryptoSearchProps {
   onSymbolSelect: (symbol: string) => void;
@@ -142,38 +147,55 @@ const CryptoSearch = ({ onSymbolSelect, selectedSymbol }: CryptoSearchProps) => 
       </div>
       
       {isOpen && results.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full overflow-hidden glass-panel rounded-lg shadow-lg animate-fade-in divide-y divide-border">
-          {results.map((result) => {
-            const isPremiumCategory = result.category === 'Forex' || result.category === 'Commodities';
-            const isDisabled = isPremiumCategory && !hasSubscription;
-            
-            return (
-              <button
-                key={result.symbol}
-                onClick={() => handleSelectSymbol(result.symbol, result.category)}
-                className={`w-full px-4 py-2 text-left transition-colors duration-150 flex items-center justify-between
-                  ${isDisabled 
-                    ? 'cursor-not-allowed bg-secondary/20 opacity-70' 
-                    : 'hover:bg-primary/10'}`}
-                disabled={isDisabled}
-              >
-                <div className="flex items-center">
-                  <span className="font-medium">{getAssetName(result)}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{result.quoteAsset}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ml-2 ${getCategoryColor(result.category)}`}>
-                    {result.category}
-                  </span>
-                  
-                  {/* Show lock icon for premium categories when user has no subscription */}
-                  {isDisabled && (
-                    <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
-                  )}
-                </div>
-                <span className="text-xs font-mono text-muted-foreground">{result.symbol}</span>
-              </button>
-            );
-          })}
-        </div>
+        <TooltipProvider>
+          <div className="absolute z-10 mt-1 w-full overflow-hidden glass-panel rounded-lg shadow-lg animate-fade-in divide-y divide-border">
+            {results.map((result) => {
+              const isPremiumCategory = result.category === 'Forex' || result.category === 'Commodities';
+              const isDisabled = isPremiumCategory && !hasSubscription;
+              
+              const resultButton = (
+                <button
+                  key={result.symbol}
+                  onClick={() => handleSelectSymbol(result.symbol, result.category)}
+                  className={`w-full px-4 py-2 text-left transition-colors duration-150 flex items-center justify-between
+                    ${isDisabled 
+                      ? 'cursor-not-allowed bg-secondary/20 opacity-70' 
+                      : 'hover:bg-primary/10'}`}
+                  disabled={isDisabled}
+                >
+                  <div className="flex items-center">
+                    <span className="font-medium">{getAssetName(result)}</span>
+                    <span className="text-xs text-muted-foreground ml-2">{result.quoteAsset}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ml-2 ${getCategoryColor(result.category)}`}>
+                      {result.category}
+                    </span>
+                    
+                    {/* Show lock icon for premium categories when user has no subscription */}
+                    {isDisabled && (
+                      <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-xs font-mono text-muted-foreground">{result.symbol}</span>
+                </button>
+              );
+              
+              if (isDisabled) {
+                return (
+                  <Tooltip key={result.symbol}>
+                    <TooltipTrigger asChild>
+                      {resultButton}
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="bg-popover border border-border text-sm">
+                      <p>Available only for premium plan users</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              
+              return resultButton;
+            })}
+          </div>
+        </TooltipProvider>
       )}
       
       {isLoading && (
