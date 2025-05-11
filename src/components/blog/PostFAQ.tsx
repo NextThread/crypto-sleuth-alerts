@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Mail, ArrowRight } from 'lucide-react';
 import { BlogPost } from '@/utils/blogDataUtils';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface PostFAQProps {
   post: BlogPost;
@@ -37,6 +39,30 @@ const DEFAULT_FAQS = [
 ];
 
 const PostFAQ: React.FC<PostFAQProps> = ({ post }) => {
+  const [email, setEmail] = useState('');
+  const { toast } = useToast();
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would typically send the email to your backend or newsletter service
+    // For now, we'll just show a toast message
+    
+    if (!email.trim() || !email.includes('@')) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Thanks for subscribing!",
+      description: "You'll receive our latest updates in your inbox",
+    });
+    setEmail('');
+  };
+
   return (
     <div className="mt-10 border border-border rounded-lg p-6 bg-card/30 backdrop-blur-sm">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -56,9 +82,37 @@ const PostFAQ: React.FC<PostFAQProps> = ({ post }) => {
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* Newsletter Subscription CTA */}
+      <div className="mt-8 pt-6 border-t border-border">
+        <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              Subscribe to our Newsletter
+            </h3>
+            <p className="text-muted-foreground">
+              Get the latest crypto insights, market analysis, and trading strategies delivered to your inbox.
+            </p>
+          </div>
+          
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <input
+              type="email"
+              placeholder="Your email address"
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 min-w-[240px]"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
+              Subscribe <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default PostFAQ;
-
