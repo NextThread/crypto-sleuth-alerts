@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { KlineData, TimeInterval, getKlineData } from '../services/binanceService';
+import { KlineData, TimeInterval, getKlineData, connectToKlineWebSocket } from '../services/binanceService';
 import { formatTimeLabel, generateChartOptions, getCandlestickColors } from '../utils/chartUtils';
 import { 
   calculateSupportResistance, 
@@ -69,11 +69,8 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
     
     fetchData();
     
-    const wsEndpoint = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
-    const ws = new WebSocket(wsEndpoint);
-    
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
+    // Use the unified WebSocket connection for both crypto and forex
+    const wsConnection = connectToKlineWebSocket(symbol, interval, (message) => {
       if (message.k) {
         const { t: openTime, o: open, h: high, l: low, c: close, v: volume, T: closeTime, n: numberOfTrades } = message.k;
         
@@ -113,10 +110,10 @@ const CryptoChart = ({ symbol, interval, chartControls }: CryptoChartProps) => {
           return newData;
         });
       }
-    };
+    });
     
     return () => {
-      ws.close();
+      wsConnection.close();
     };
   }, [symbol, interval]);
   
