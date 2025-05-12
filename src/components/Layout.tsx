@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
+import MarqueeNotification from './MarqueeNotification';
 import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText, Info } from 'lucide-react';
 
 interface LayoutProps {
@@ -19,6 +20,8 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 text-foreground antialiased overflow-x-hidden">
+      <MarqueeNotification message="DEX coins analysis coming soon on ChartPulse" speed="normal" />
+      
       <header className="w-full glass-panel backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center">
