@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, X, ExternalLink, AlertCircle } from 'lucide-react';
+import { Check, X, ExternalLink, AlertCircle, QrCode } from 'lucide-react';
 import Layout from '../components/Layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getSolscanTransactionLink } from '../utils/solanaUtils';
@@ -23,7 +23,7 @@ const Subscription = () => {
   const [transactionId, setTransactionId] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [verificationAttempted, setVerificationAttempted] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'ethereum'>('solana');
+  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'ethereum' | 'upi'>('solana');
 
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -77,6 +77,13 @@ const Subscription = () => {
       ))}
     </ul>
   );
+
+  // Function to convert USD to INR (approximation)
+  const convertToINR = (usdAmount: number) => {
+    // Using fixed exchange rate of 75 INR per USD for simplicity
+    const exchangeRate = 75;
+    return (usdAmount * exchangeRate).toFixed(2);
+  };
 
   if (!user) {
     return (
@@ -181,7 +188,11 @@ const Subscription = () => {
               <Alert className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Your transaction will be verified through {paymentMethod === 'solana' ? 'Solscan' : 'Etherscan'}. 
+                  Your transaction will be verified through {
+                    paymentMethod === 'solana' ? 'Solscan' : 
+                    paymentMethod === 'ethereum' ? 'Etherscan' : 
+                    'UPI Transaction ID'
+                  }. 
                   Make sure to complete the payment and copy the transaction ID correctly.
                 </AlertDescription>
               </Alert>
@@ -189,12 +200,13 @@ const Subscription = () => {
               <Tabs 
                 defaultValue="solana" 
                 value={paymentMethod} 
-                onValueChange={(value) => setPaymentMethod(value as 'solana' | 'ethereum')}
+                onValueChange={(value) => setPaymentMethod(value as 'solana' | 'ethereum' | 'upi')}
                 className="mb-6"
               >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="solana">Solana (Phantom)</TabsTrigger>
-                  <TabsTrigger value="ethereum">Ethereum (MetaMask)</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="solana">Solana</TabsTrigger>
+                  <TabsTrigger value="ethereum">Ethereum</TabsTrigger>
+                  <TabsTrigger value="upi">UPI (INR)</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="solana" className="space-y-4">
@@ -222,21 +234,48 @@ const Subscription = () => {
                     <li>Paste it below and click "Verify Payment"</li>
                   </ol>
                 </TabsContent>
+
+                <TabsContent value="upi" className="space-y-4">
+                  <h3 className="font-medium">Payment Instructions:</h3>
+                  <ol className="list-decimal pl-5 space-y-2">
+                    <li>Open your UPI payment app (PhonePe, Google Pay, Paytm, etc.)</li>
+                    <li>Send <span className="font-bold">₹{convertToINR(selectedPlan?.price || 0)}</span> to this UPI ID:</li>
+                    <div className="bg-muted p-2 rounded text-sm font-mono my-2 break-all select-all">
+                      anuragroy@pnb
+                    </div>
+                    <li>Or scan this QR code:</li>
+                    <div className="my-4 p-4 bg-white rounded-lg flex justify-center">
+                      <img 
+                        src="/lovable-uploads/469bb7ea-f0a7-476b-8320-5c578e0f2fac.png" 
+                        alt="UPI QR Code"
+                        className="w-48 h-48 object-contain" 
+                      />
+                    </div>
+                    <li>Copy the UPI Transaction Reference ID from your payment app</li>
+                    <li>Paste it below and click "Verify Payment"</li>
+                  </ol>
+                </TabsContent>
               </Tabs>
 
               <form onSubmit={handlePaymentSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="transaction-id">
-                    {paymentMethod === 'solana' ? 'Solana Transaction ID' : 'Ethereum Transaction Hash'}
+                    {paymentMethod === 'solana' ? 'Solana Transaction ID' : 
+                     paymentMethod === 'ethereum' ? 'Ethereum Transaction Hash' :
+                     'UPI Transaction Reference ID'}
                   </Label>
                   <Input
                     id="transaction-id"
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder={`Enter your ${paymentMethod === 'solana' ? 'transaction signature' : 'transaction hash'}`}
+                    placeholder={`Enter your ${
+                      paymentMethod === 'solana' ? 'transaction signature' : 
+                      paymentMethod === 'ethereum' ? 'transaction hash' :
+                      'UPI reference ID'
+                    }`}
                     required
                   />
-                  {transactionId && transactionId.length > 20 && verificationAttempted && (
+                  {transactionId && transactionId.length > 20 && verificationAttempted && paymentMethod !== 'upi' && (
                     <div className="mt-2">
                       <a 
                         href={paymentMethod === 'solana' 

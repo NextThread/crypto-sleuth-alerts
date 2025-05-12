@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -28,13 +27,14 @@ interface SubscriptionContextType {
   plans: Plan[];
   currentSubscription: UserSubscription;
   decrementSearches: () => void;
-  verifyPayment: (txId: string, planId: string, paymentMethod: 'solana' | 'ethereum') => Promise<boolean>;
+  verifyPayment: (txId: string, planId: string, paymentMethod: 'solana' | 'ethereum' | 'upi') => Promise<boolean>;
   isVerifyingPayment: boolean;
 }
 
 const DEFAULT_SEARCH_LIMIT = 3; // Total limit of 3 searches (not per day)
 const SOLANA_RECIPIENT_ADDRESS = "HQo1gG52Ae7SUQAHND6ACJ8vFbboYHPpe49dFRP8KZuu";
 const ETHEREUM_RECIPIENT_ADDRESS = "0x55D35544369F05D3E5B62c47559de3f4DAc337c6";
+const UPI_ID = "anuragroy@pnb";
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
   {
@@ -215,7 +215,24 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const verifyPayment = async (txId: string, planId: string, paymentMethod: 'solana' | 'ethereum'): Promise<boolean> => {
+  // Helper to verify UPI transactions - this would connect to a real payment verification API
+  const verifyUpiTransaction = async (txId: string, expectedAmount: number) => {
+    // In a real implementation, this would verify the transaction with UPI/bank API
+    // For demo purposes, we'll simulate a successful verification
+    console.log(`Verifying UPI transaction: ${txId} for ₹${(expectedAmount * 75).toFixed(2)} to ${UPI_ID}`);
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock successful verification
+    return {
+      isValid: true,
+      message: "Transaction verified successfully",
+      txLink: null // UPI usually doesn't have public transaction links
+    };
+  };
+
+  const verifyPayment = async (txId: string, planId: string, paymentMethod: 'solana' | 'ethereum' | 'upi'): Promise<boolean> => {
     setIsVerifyingPayment(true);
     
     try {
@@ -233,12 +250,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           selectedPlan.price,
           SOLANA_RECIPIENT_ADDRESS
         );
-      } else {
+      } else if (paymentMethod === 'ethereum') {
         verification = await verifyEthereumTransaction(
           txId, 
           selectedPlan.price,
           ETHEREUM_RECIPIENT_ADDRESS
         );
+      } else if (paymentMethod === 'upi') {
+        verification = await verifyUpiTransaction(
+          txId,
+          selectedPlan.price
+        );
+      } else {
+        throw new Error("Invalid payment method");
       }
       
       if (verification.isValid) {
@@ -272,10 +296,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
           variant: "destructive",
         });
         
-        if (txId.length > 20) {
-          console.info("View transaction:", paymentMethod === 'solana' 
-            ? getSolscanTransactionLink(txId)
-            : `https://etherscan.io/tx/${txId}`);
+        if (txId.length > 20 && verification.txLink) {
+          console.info("View transaction:", verification.txLink);
         }
         
         return false;
