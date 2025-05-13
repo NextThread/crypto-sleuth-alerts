@@ -6,7 +6,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import MarqueeNotification from './MarqueeNotification';
-import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText, Info } from 'lucide-react';
+import { LogOut, Search, CreditCard, Sparkles, Bell, Menu, User, BarChart2, BookOpen, Shield, FileText, Info, MessageSquare, Mail } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -44,6 +44,17 @@ const Layout = ({ children }: LayoutProps) => {
                   >
                     <BarChart2 className="h-4 w-4" />
                     Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/community-forum" 
+                    className={`text-sm transition-colors hover:text-primary flex items-center gap-1.5 ${
+                      location.pathname === '/community-forum' ? 'text-primary font-medium' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Community
                   </Link>
                 </li>
                 <li>
@@ -159,6 +170,10 @@ const Layout = ({ children }: LayoutProps) => {
               <Link to="/about-us" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
                 <Info className="h-3 w-3" />
                 About Us
+              </Link>
+              <Link to="/contact-us" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                <Mail className="h-3 w-3" />
+                Contact Us
               </Link>
             </div>
           </div>

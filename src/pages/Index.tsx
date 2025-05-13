@@ -24,7 +24,6 @@ import { AlertTriangle, BarChart2, LineChart, TrendingUp, Info, Sparkles, Search
 import { doc, getDoc, setDoc, increment, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import CommunityForum from '../components/CommunityForum';
 import PostFAQ from '../components/blog/PostFAQ';
 
 const INTERVALS: TimeInterval[] = ['1s', '1m', '5m', '15m', '1h', '4h', '1d', '1w', '1M'];
@@ -448,7 +447,7 @@ const Index = () => {
           <CryptoNews initialExpandedCount={6} />
         </div>
 
-        {/* FAQ Section - Added before Community Forum */}
+        {/* FAQ Section */}
         <div className="mb-16 pt-4 animate-fade-in">
           <PostFAQ post={{
             slug: "crypto-faqs",
@@ -462,10 +461,6 @@ const Index = () => {
             image: "",
             readingTime: "5 min"
           }} />
-        </div>
-
-        <div className="animate-fade-in mb-16 pt-4">
-          <CommunityForum />
         </div>
       </div>
     </Layout>

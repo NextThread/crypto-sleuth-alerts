@@ -18,6 +18,8 @@ import BlogPost from "./pages/BlogPost";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import AboutUs from "./pages/AboutUs";
+import CommunityForum from "./pages/CommunityForum";
+import ContactUs from "./pages/ContactUs";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,8 @@ const App = () => {
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                   <Route path="/about-us" element={<AboutUs />} />
+                  <Route path="/community-forum" element={<CommunityForum />} />
+                  <Route path="/contact-us" element={<ContactUs />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SubscriptionProvider>
