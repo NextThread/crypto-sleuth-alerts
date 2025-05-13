@@ -13,6 +13,7 @@ import HowWeWork from '../components/HowWeWork';
 import AnalysisCounter from '../components/AnalysisCounter';
 import BacktestingResults from '../components/BacktestingResults';
 import CryptoRecommendations from '../components/CryptoRecommendations';
+import Testimonials from '../components/Testimonials';
 import { TimeInterval, getKlineData, connectToKlineWebSocket } from '../services/binanceService';
 import { getTimeLabelByInterval } from '../utils/chartUtils';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -445,6 +446,11 @@ const Index = () => {
         
         <div className="animate-fade-in animation-delay-600 mb-16 pt-4">
           <CryptoNews initialExpandedCount={6} />
+        </div>
+
+        {/* New Testimonials Section */}
+        <div className="mb-16 pt-4">
+          <Testimonials />
         </div>
 
         {/* FAQ Section */}
